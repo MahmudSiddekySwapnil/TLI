@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trust Land Initiative — Samity Manager</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fff;--bg2:#f5f5f4;--bg3:#f0efe8;
+  --text:#1a1a1a;--text2:#666;--text3:#999;
+  --border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.22);
+  --green-bg:#ecfdf5;--green-text:#166534;
+  --red-bg:#fef2f2;--red-text:#991b1b;
+  --yellow-bg:#fffbeb;--yellow-text:#92400e;
+  --edit-bg:#f0f4ff;
+  --radius:8px;--radius-lg:12px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#1c1c1b;--bg2:#252524;--bg3:#2a2a28;
+  --text:#f0efea;--text2:#a8a7a0;--text3:#6b6a65;
+  --border:rgba(255,255,255,0.12);--border2:rgba(255,255,255,0.26);
+  --green-bg:#052e16;--green-text:#86efac;
+  --red-bg:#450a0a;--red-text:#fca5a5;
+  --yellow-bg:#451a03;--yellow-text:#fcd34d;
+  --edit-bg:#1e2235;
+}}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;color:var(--text);background:var(--bg3);min-height:100vh}
+.app{max-width:1150px;margin:0 auto;padding:1.5rem}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;background:var(--bg);border-radius:var(--radius-lg);padding:1rem 1.25rem;border:0.5px solid var(--border);flex-wrap:wrap;gap:10px}
+header h1{font-size:18px;font-weight:500}
+header small{font-size:12px;color:var(--text2);display:block;margin-top:2px}
+.hdr-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+select,input[type=text],input[type=number]{border:0.5px solid var(--border2);border-radius:var(--radius);padding:6px 10px;font-size:13px;background:var(--bg);color:var(--text)}
+select:focus,input:focus{outline:2px solid #3b82f6;outline-offset:1px}
+.btn{padding:6px 14px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.btn:hover{background:var(--bg2)}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+.btn-primary{background:var(--text);color:var(--bg);border-color:var(--text)}
+.btn-primary:hover{opacity:0.85}
+.btn-danger{background:var(--red-bg);color:var(--red-text);border-color:transparent}
+.btn-sm{padding:3px 10px;font-size:12px}
+.tabs{display:flex;gap:4px;margin-bottom:1.5rem;background:var(--bg);border-radius:var(--radius-lg);padding:6px;border:0.5px solid var(--border);flex-wrap:wrap}
+.tab{padding:7px 18px;cursor:pointer;border:none;background:none;font-size:13px;color:var(--text2);border-radius:var(--radius);transition:all .15s}
+.tab:hover{background:var(--bg2);color:var(--text)}
+.tab.active{background:var(--text);color:var(--bg);font-weight:500}
+.card{background:var(--bg);border-radius:var(--radius-lg);padding:1.25rem;border:0.5px solid var(--border);margin-bottom:1rem}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:1rem}
+.metric{background:var(--bg2);border-radius:var(--radius);padding:.9rem}
+.metric-label{font-size:11px;color:var(--text2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+.metric-value{font-size:22px;font-weight:500}
+.metric-value.green{color:var(--green-text)}
+.metric-value.red{color:var(--red-text)}
+.metric-value.yellow{color:var(--yellow-text)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:8px 10px;font-weight:500;font-size:11px;color:var(--text2);border-bottom:0.5px solid var(--border);background:var(--bg2);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+td{padding:7px 10px;border-bottom:0.5px solid var(--border);vertical-align:middle}
+tr:hover td{background:var(--bg2)}
+tr.editing td{background:var(--edit-bg)}
+tr.editing:hover td{background:var(--edit-bg)}
+.badge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:11px;font-weight:500}
+.badge.paid{background:var(--green-bg);color:var(--green-text)}
+.badge.unpaid{background:var(--red-bg);color:var(--red-text)}
+.badge.partial{background:var(--yellow-bg);color:var(--yellow-text)}
+.cell-input{width:72px;border:0.5px solid var(--border);border-radius:4px;padding:3px 6px;font-size:12px;background:var(--bg);color:var(--text);text-align:right}
+.cell-input:focus{outline:2px solid #3b82f6;outline-offset:1px;border-color:transparent}
+.edit-input{border:0.5px solid var(--border2);border-radius:var(--radius);padding:4px 8px;font-size:13px;background:var(--bg);color:var(--text);width:100%}
+.edit-input:focus{outline:2px solid #3b82f6;outline-offset:1px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.form-label{font-size:12px;color:var(--text2);margin-bottom:4px}
+.alert{padding:10px 14px;border-radius:var(--radius);font-size:13px;margin-bottom:1rem}
+.alert.success{background:var(--green-bg);color:var(--green-text)}
+.alert.error{background:var(--red-bg);color:var(--red-text)}
+.alert.info{background:#eff6ff;color:#1e40af}
+.overflow-x{overflow-x:auto}
+.page{display:none}.page.active{display:block}
+.saved-pill{font-size:11px;color:var(--green-text);background:var(--green-bg);padding:3px 10px;border-radius:99px;display:none}
+.add-form-box{background:var(--bg2);border-radius:var(--radius);padding:1rem;margin-bottom:1rem;border:0.5px solid var(--border)}
+.row-actions{display:flex;gap:4px}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--border2);border-top-color:var(--text);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-overlay{display:flex;align-items:center;justify-content:center;gap:10px;padding:3rem;color:var(--text2);font-size:13px}
+/* setup screen */
+.setup-card{max-width:560px;margin:2rem auto}
+.setup-step{display:flex;gap:12px;margin-bottom:1.5rem;align-items:flex-start}
+.step-num{width:26px;height:26px;border-radius:50%;background:var(--text);color:var(--bg);font-size:12px;font-weight:500;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.step-body{flex:1}
+.step-title{font-weight:500;margin-bottom:4px}
+.step-desc{font-size:13px;color:var(--text2);line-height:1.6}
+.url-input{width:100%;margin-top:8px;font-family:monospace;font-size:12px}
+.admin-badge{font-size:11px;background:var(--yellow-bg);color:var(--yellow-text);padding:2px 8px;border-radius:99px;margin-left:6px}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- SETUP SCREEN (shown before API URL is configured) -->
+  <div id="setup-screen" style="display:none">
+    <div style="text-align:center;margin-bottom:2rem">
+      <h1 style="font-size:22px;font-weight:500">Trust Land Initiative</h1>
+      <p style="color:var(--text2);margin-top:4px">Samity Manager — first time setup</p>
+    </div>
+    <div class="card setup-card">
+      <h2 style="font-size:15px;font-weight:500;margin-bottom:1.5rem">Connect to Google Sheets</h2>
+      <div class="setup-step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Open Google Sheets</div>
+          <div class="step-desc">Create a new Google Sheet. Name it "Samity Manager" or anything you like.</div>
+        </div>
+      </div>
+      <div class="setup-step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Open Apps Script</div>
+          <div class="step-desc">Inside your Sheet: click <strong>Extensions → Apps Script</strong>. Delete any existing code.</div>
+        </div>
+      </div>
+      <div class="setup-step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Paste the backend code</div>
+          <div class="step-desc">Copy all the code from <strong>apps-script.js</strong> and paste it into the Apps Script editor. Change the password if you want. Click Save (💾).</div>
+        </div>
+      </div>
+      <div class="setup-step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">Deploy as Web App</div>
+          <div class="step-desc">Click <strong>Deploy → New deployment</strong> → select type <strong>Web App</strong> → set "Who has access" to <strong>Anyone</strong> → click <strong>Deploy</strong>. Copy the web app URL.</div>
+        </div>
+      </div>
+      <div class="setup-step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <div class="step-title">Paste the URL below</div>
+          <input type="text" class="url-input" id="setup-url" placeholder="https://script.google.com/macros/s/YOUR_ID/exec" />
+        </div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px" onclick="saveApiUrl()">
+        Connect & start →
+      </button>
+      <div id="setup-alert" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <!-- MAIN APP (shown after setup) -->
+  <div id="main-app" style="display:none">
+    <header>
+      <div>
+        <h1>Trust Land Initiative</h1>
+        <small>Samity Management System</small>
+      </div>
+      <div class="hdr-right">
+        <span class="saved-pill" id="savedPill">✓ Saved</span>
+        <span id="adminBadge" class="admin-badge" style="display:none"><i class="ti ti-shield-check"></i> Admin</span>
+        <select id="yearSel"></select>
+        <button class="btn" onclick="loadData(true)"><i class="ti ti-refresh"></i> Refresh</button>
+        <button class="btn btn-primary" id="exportBtn" onclick="exportCSV()"><i class="ti ti-download"></i> Export</button>
+        <button class="btn" id="adminLoginBtn" onclick="showAdminLogin()" style="display:none">
+          <i class="ti ti-lock"></i> Admin login
+        </button>
+        <button class="btn btn-danger btn-sm" id="adminLogoutBtn" onclick="adminLogout()" style="display:none">
+          Logout
+        </button>
+      </div>
+    </header>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('dashboard',this)"><i class="ti ti-layout-dashboard"></i> Dashboard</button>
+      <button class="tab" onclick="switchTab('payments',this)"><i class="ti ti-cash"></i> Payments</button>
+      <button class="tab admin-only" onclick="switchTab('members',this)" style="display:none"><i class="ti ti-users"></i> Members</button>
+      <button class="tab admin-only" onclick="switchTab('settings',this)" style="display:none"><i class="ti ti-settings"></i> Settings</button>
+    </div>
+
+    <div id="page-dashboard" class="page active"></div>
+    <div id="page-payments" class="page"></div>
+
+    <!-- Members tab static shell -->
+    <div id="page-members" class="page">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+          <h2 style="font-size:15px;font-weight:500">All members</h2>
+          <button class="btn btn-primary btn-sm" onclick="toggleAddForm()"><i class="ti ti-plus"></i> Add member</button>
+        </div>
+        <div class="add-form-box" id="addMemberForm" style="display:none">
+          <div class="form-grid">
+            <div>
+              <div class="form-label">Full name</div>
+              <input type="text" id="new-name" placeholder="Member name" style="width:100%"
+                onkeydown="if(event.key==='Enter')addMember()" />
+            </div>
+            <div>
+              <div class="form-label">Phone number</div>
+              <input type="text" id="new-phone" placeholder="017XXXXXXXX" style="width:100%"
+                onkeydown="if(event.key==='Enter')addMember()" />
+            </div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary btn-sm" id="addMemberBtn" onclick="addMember()"><i class="ti ti-check"></i> Save member</button>
+            <button class="btn btn-sm" onclick="toggleAddForm()">Cancel</button>
+          </div>
+          <div id="add-alert" style="margin-top:10px"></div>
+        </div>
+        <div class="overflow-x">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:40px">#</th>
+                <th>Name</th><th>Phone</th>
+                <th>Paid (<span id="memberYearLabel"></span>)</th>
+                <th style="width:140px">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="membersTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="page-settings" class="page"></div>
+
+    <!-- Admin login modal -->
+    <div id="adminModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;display:none;align-items:center;justify-content:center">
+      <div style="background:var(--bg);border-radius:var(--radius-lg);padding:1.5rem;width:320px;border:0.5px solid var(--border)">
+        <h2 style="font-size:15px;font-weight:500;margin-bottom:1rem"><i class="ti ti-lock"></i> Admin login</h2>
+        <div class="form-label">Password</div>
+        <input type="password" id="adminPwInput" style="width:100%;margin-bottom:12px"
+          placeholder="Enter admin password"
+          onkeydown="if(event.key==='Enter')submitAdminLogin()" />
+        <div id="adminLoginAlert" style="margin-bottom:10px"></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="submitAdminLogin()">Login</button>
+          <button class="btn" onclick="closeAdminModal()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const SHORT=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const STORAGE_URL_KEY='samity_api_url';
+const STORAGE_PW_KEY='samity_admin_pw';
+const STORAGE_YEARS_KEY='samity_years';
+
+/* ── in-memory state ── */
+let state={members:[],payments:{},settings:{openingBalance:5000,monthlyTarget:3000,currency:'৳'}};
+let currentTab='dashboard';
+let currentYear=new Date().getFullYear();
+let editingMemberId=null;
+let adminPassword=null; // null = viewer, string = admin
+
+/* ── API URL ── */
+function getApiUrl(){return localStorage.getItem(STORAGE_URL_KEY)||''}
+function saveApiUrl(){
+  const url=document.getElementById('setup-url').value.trim();
+  if(!url||!url.startsWith('https://')){
+    document.getElementById('setup-alert').innerHTML='<div class="alert error">Please paste a valid https:// URL.</div>';
+    return;
+  }
+  document.getElementById('setup-alert').innerHTML='<div class="alert info"><span class="spinner"></span> Testing connection...</div>';
+  api({action:'getAll'},url).then(d=>{
+    if(d.ok){
+      localStorage.setItem(STORAGE_URL_KEY,url);
+      initApp(d);
+    } else {
+      document.getElementById('setup-alert').innerHTML='<div class="alert error">Connection failed: '+(d.error||'unknown error')+'</div>';
+    }
+  }).catch(()=>{
+    document.getElementById('setup-alert').innerHTML='<div class="alert error">Could not reach that URL. Check it and try again.</div>';
+  });
+}
+
+/* ── API call ── */
+function api(params, urlOverride){
+  const url=urlOverride||getApiUrl();
+  const qs=Object.entries(params).map(([k,v])=>encodeURIComponent(k)+'='+encodeURIComponent(v)).join('&');
+  return fetch(url+'?'+qs).then(r=>r.json());
+}
+
+/* ── flash saved ── */
+function flashSaved(){
+  const el=document.getElementById('savedPill');
+  if(!el)return;
+  el.style.display='inline-block';
+  clearTimeout(el._t);
+  el._t=setTimeout(()=>el.style.display='none',2000);
+}
+
+/* ── years (stored locally since they're UI config) ── */
+function getYears(){
+  try{return JSON.parse(localStorage.getItem(STORAGE_YEARS_KEY))||[new Date().getFullYear()]}
+  catch{return[new Date().getFullYear()]}
+}
+function saveYears(y){localStorage.setItem(STORAGE_YEARS_KEY,JSON.stringify(y))}
+
+/* ── admin ── */
+function isAdmin(){return adminPassword!==null}
+
+function showAdminLogin(){
+  document.getElementById('adminPwInput').value='';
+  document.getElementById('adminLoginAlert').innerHTML='';
+  document.getElementById('adminModal').style.display='flex';
+  setTimeout(()=>document.getElementById('adminPwInput').focus(),50);
+}
+function closeAdminModal(){document.getElementById('adminModal').style.display='none';}
+
+function submitAdminLogin(){
+  const pw=document.getElementById('adminPwInput').value;
+  document.getElementById('adminLoginAlert').innerHTML='<span class="spinner"></span>';
+  api({action:'checkPassword',password:pw}).then(d=>{
+    if(d.ok){
+      adminPassword=pw;
+      localStorage.setItem(STORAGE_PW_KEY,pw);
+      closeAdminModal();
+      applyAdminUI();
+    } else {
+      document.getElementById('adminLoginAlert').innerHTML='<div class="alert error">Wrong password.</div>';
+    }
+  }).catch(()=>{
+    document.getElementById('adminLoginAlert').innerHTML='<div class="alert error">Network error.</div>';
+  });
+}
+
+function adminLogout(){
+  adminPassword=null;
+  localStorage.removeItem(STORAGE_PW_KEY);
+  // go back to dashboard
+  currentTab='dashboard';
+  applyAdminUI();
+  document.querySelectorAll('.tab').forEach((t,i)=>{t.classList.toggle('active',i===0)});
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-dashboard').classList.add('active');
+  render();
+}
+
+function applyAdminUI(){
+  const admin=isAdmin();
+  document.getElementById('adminBadge').style.display=admin?'inline-flex':'none';
+  document.getElementById('adminLoginBtn').style.display=admin?'none':'inline-flex';
+  document.getElementById('adminLogoutBtn').style.display=admin?'inline-flex':'none';
+  document.querySelectorAll('.admin-only').forEach(el=>el.style.display=admin?'':'none');
+  // if not admin and on members/settings, go to dashboard
+  if(!admin && (currentTab==='members'||currentTab==='settings')){
+    currentTab='dashboard';
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById('page-dashboard').classList.add('active');
+  }
+}
+
+/* ── init ── */
+function start(){
+  const url=getApiUrl();
+  if(!url){
+    document.getElementById('setup-screen').style.display='block';
+    return;
+  }
+  document.getElementById('main-app').style.display='block';
+  // restore saved admin session
+  const savedPw=localStorage.getItem(STORAGE_PW_KEY);
+  if(savedPw) adminPassword=savedPw;
+  applyAdminUI();
+  loadData(false);
+}
+
+function loadData(showRefresh){
+  const dashEl=document.getElementById('page-dashboard');
+  if(showRefresh||!state.members.length){
+    dashEl.innerHTML='<div class="loading-overlay"><span class="spinner"></span> Loading data...</div>';
+  }
+  api({action:'getAll'}).then(d=>{
+    if(d.ok) initApp(d);
+    else dashEl.innerHTML='<div class="card"><div class="alert error">Failed to load: '+(d.error||'unknown')+'</div></div>';
+  }).catch(()=>{
+    dashEl.innerHTML='<div class="card"><div class="alert error">Cannot reach server. Check your internet connection.</div></div>';
+  });
+}
+
+function initApp(d){
+  state.members=d.members||[];
+  state.payments=d.payments||{};
+  state.settings=d.settings||{openingBalance:5000,monthlyTarget:3000,currency:'৳'};
+  // ensure current year is in list
+  const years=getYears();
+  if(!years.includes(currentYear)){years.push(currentYear);saveYears(years);}
+  render();
+}
+
+/* ── payment helpers ── */
+function getPayment(mid,year,month){
+  const y=String(year),m=String(mid),mo=String(month);
+  return (state.payments[y]&&state.payments[y][m]&&state.payments[y][m][mo]!==undefined)
+    ? Number(state.payments[y][m][mo]) : 0;
+}
+function localSetPayment(mid,year,month,val){
+  const y=String(year),m=String(mid),mo=String(month);
+  if(!state.payments[y])state.payments[y]={};
+  if(!state.payments[y][m])state.payments[y][m]={};
+  state.payments[y][m][mo]=val;
+}
+function getMemberTotal(mid,year){
+  let t=0; for(let mo=0;mo<12;mo++) t+=getPayment(mid,year,mo); return t;
+}
+function getAllTotal(year){
+  return state.members.reduce((s,m)=>s+getMemberTotal(m.id,year),0);
+}
+function getStatus(mid,year){
+  const now=new Date();
+  const mo=(year===now.getFullYear())?now.getMonth():11;
+  const val=getPayment(mid,year,mo);
+  const tgt=Number(state.settings.monthlyTarget)||3000;
+  return val===0?'unpaid':val>=tgt?'paid':'partial';
+}
+function badgeHtml(st){
+  const lbl=st==='paid'?'Paid':st==='partial'?'Partial':'Unpaid';
+  return `<span class="badge ${st}">${lbl}</span>`;
+}
+
+/* ── tab switching ── */
+function switchTab(tab,el){
+  if((tab==='members'||tab==='settings')&&!isAdmin()){showAdminLogin();return;}
+  if(currentTab==='members'){
+    document.getElementById('addMemberForm').style.display='none';
+    editingMemberId=null;
+  }
+  currentTab=tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+tab).classList.add('active');
+  render();
+}
+
+/* ══════════ DASHBOARD ══════════ */
+function renderDashboard(){
+  const s=state.settings;
+  const c=s.currency||'৳';
+  const total=getAllTotal(currentYear);
+  const grand=Number(s.openingBalance||0)+total;
+  const now=new Date();
+  const mo=(currentYear===now.getFullYear())?now.getMonth():11;
+  const paid=state.members.filter(m=>getStatus(m.id,currentYear)==='paid').length;
+  const unpaid=state.members.filter(m=>getStatus(m.id,currentYear)==='unpaid').length;
+  const partial=state.members.filter(m=>getStatus(m.id,currentYear)==='partial').length;
+  const moCol=state.members.reduce((sum,m)=>sum+getPayment(m.id,currentYear,mo),0);
+
+  document.getElementById('page-dashboard').innerHTML=`
+  <div class="metrics">
+    <div class="metric"><div class="metric-label">Opening balance</div><div class="metric-value">${c}${Number(s.openingBalance||0).toLocaleString()}</div></div>
+    <div class="metric"><div class="metric-label">Collected ${currentYear}</div><div class="metric-value green">${c}${total.toLocaleString()}</div></div>
+    <div class="metric"><div class="metric-label">Grand total</div><div class="metric-value">${c}${grand.toLocaleString()}</div></div>
+    <div class="metric"><div class="metric-label">Total members</div><div class="metric-value">${state.members.length}</div></div>
+  </div>
+  <div class="metrics">
+    <div class="metric"><div class="metric-label">${SHORT[mo]} paid</div><div class="metric-value green">${paid}</div></div>
+    <div class="metric"><div class="metric-label">${SHORT[mo]} partial</div><div class="metric-value yellow">${partial}</div></div>
+    <div class="metric"><div class="metric-label">${SHORT[mo]} unpaid</div><div class="metric-value red">${unpaid}</div></div>
+    <div class="metric"><div class="metric-label">${SHORT[mo]} collected</div><div class="metric-value">${c}${moCol.toLocaleString()}</div></div>
+  </div>
+  <div class="card">
+    <h2 style="font-size:15px;font-weight:500;margin-bottom:1rem">${MONTHS[mo]} ${currentYear} — payment status</h2>
+    <div class="overflow-x"><table>
+      <thead><tr><th>#</th><th>Member name</th><th>Phone</th><th>${MONTHS[mo]}</th><th>Status</th><th>${currentYear} total</th></tr></thead>
+      <tbody>${state.members.map(m=>{
+        const val=getPayment(m.id,currentYear,mo);
+        const st=getStatus(m.id,currentYear);
+        return `<tr>
+          <td style="color:var(--text2)">${m.id}</td>
+          <td style="font-weight:500">${m.name}</td>
+          <td style="color:var(--text2)">${m.phone||'—'}</td>
+          <td>${c}${val.toLocaleString()}</td>
+          <td>${badgeHtml(st)}</td>
+          <td style="font-weight:500">${c}${getMemberTotal(m.id,currentYear).toLocaleString()}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div>
+  </div>`;
+}
+
+/* ══════════ PAYMENTS ══════════ */
+function renderPayments(){
+  const s=state.settings;
+  const c=s.currency||'৳';
+  const editable=isAdmin();
+  let h=`<div class="card">`;
+  if(!editable) h+=`<div class="alert info" style="margin-bottom:1rem"><i class="ti ti-info-circle"></i> View only — <a href="#" onclick="showAdminLogin();return false">admin login</a> required to edit payments.</div>`;
+  h+=`<div class="overflow-x"><table>
+    <thead><tr><th>#</th><th>Member</th>`;
+  SHORT.forEach(mn=>h+=`<th style="min-width:${editable?'62':'45'}px">${mn}</th>`);
+  h+=`<th>Total</th><th>Status</th></tr></thead><tbody>`;
+  state.members.forEach(m=>{
+    const total=getMemberTotal(m.id,currentYear);
+    const st=getStatus(m.id,currentYear);
+    h+=`<tr><td style="color:var(--text2)">${m.id}</td><td style="font-weight:500;white-space:nowrap">${m.name}</td>`;
+    for(let mo=0;mo<12;mo++){
+      const v=getPayment(m.id,currentYear,mo);
+      if(editable){
+        h+=`<td><input class="cell-input" type="number" min="0" value="${v}"
+          onchange="updatePayment(${m.id},${currentYear},${mo},this.value,this)" /></td>`;
+      } else {
+        h+=`<td style="font-size:12px;color:var(--text2)">${v>0?c+v.toLocaleString():'—'}</td>`;
+      }
+    }
+    h+=`<td id="ptot-${m.id}" style="font-weight:500">${c}${total.toLocaleString()}</td>
+        <td id="pst-${m.id}">${badgeHtml(st)}</td></tr>`;
+  });
+  h+=`<tr style="background:var(--bg2)"><td colspan="2" style="font-weight:500;font-size:12px">Monthly total</td>`;
+  for(let mo=0;mo<12;mo++){
+    const t=state.members.reduce((sum,m2)=>sum+getPayment(m2.id,currentYear,mo),0);
+    h+=`<td id="mcol-${mo}" style="font-weight:500;font-size:12px">${c}${t.toLocaleString()}</td>`;
+  }
+  h+=`<td id="grand-col" style="font-weight:500">${c}${getAllTotal(currentYear).toLocaleString()}</td><td></td></tr>`;
+  h+=`</tbody></table></div></div>`;
+  document.getElementById('page-payments').innerHTML=h;
+}
+
+function updatePayment(mid,year,month,val,inputEl){
+  const amount=parseFloat(val)||0;
+  localSetPayment(mid,year,month,amount);
+  refreshPaymentTotals();
+  // debounce server save
+  if(inputEl._t) clearTimeout(inputEl._t);
+  inputEl._t=setTimeout(()=>{
+    inputEl.disabled=true;
+    api({action:'savePayment',password:adminPassword,memberId:mid,year,month,amount})
+      .then(d=>{
+        if(d.ok) flashSaved();
+        else alert('Save failed: '+(d.error||'error'));
+      })
+      .catch(()=>alert('Network error while saving.'))
+      .finally(()=>inputEl.disabled=false);
+  },600);
+}
+
+function refreshPaymentTotals(){
+  const c=state.settings.currency||'৳';
+  state.members.forEach(m=>{
+    const t=getMemberTotal(m.id,currentYear);
+    const st=getStatus(m.id,currentYear);
+    const te=document.getElementById('ptot-'+m.id);
+    const se=document.getElementById('pst-'+m.id);
+    if(te)te.textContent=c+t.toLocaleString();
+    if(se)se.innerHTML=badgeHtml(st);
+  });
+  for(let mo=0;mo<12;mo++){
+    const t=state.members.reduce((sum,m2)=>sum+getPayment(m2.id,currentYear,mo),0);
+    const el=document.getElementById('mcol-'+mo);
+    if(el)el.textContent=c+t.toLocaleString();
+  }
+  const ge=document.getElementById('grand-col');
+  if(ge)ge.textContent=c+getAllTotal(currentYear).toLocaleString();
+}
+
+/* ══════════ MEMBERS (admin only) ══════════ */
+function toggleAddForm(){
+  const box=document.getElementById('addMemberForm');
+  const opening=box.style.display==='none';
+  box.style.display=opening?'block':'none';
+  if(opening){
+    document.getElementById('new-name').value='';
+    document.getElementById('new-phone').value='';
+    document.getElementById('add-alert').innerHTML='';
+    document.getElementById('new-name').focus();
+  }
+}
+
+function addMember(){
+  const nameEl=document.getElementById('new-name');
+  const phoneEl=document.getElementById('new-phone');
+  const alertEl=document.getElementById('add-alert');
+  const name=nameEl.value.trim();
+  const phone=phoneEl.value.trim();
+  if(!name){alertEl.innerHTML='<div class="alert error">Please enter a name.</div>';nameEl.focus();return;}
+  const btn=document.getElementById('addMemberBtn');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Saving...';
+  api({action:'addMember',password:adminPassword,name,phone}).then(d=>{
+    if(d.ok){
+      document.getElementById('addMemberForm').style.display='none';
+      loadData(false);
+    } else {
+      alertEl.innerHTML='<div class="alert error">'+(d.error||'Error saving')+'</div>';
+      btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Save member';
+    }
+  }).catch(()=>{
+    alertEl.innerHTML='<div class="alert error">Network error.</div>';
+    btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Save member';
+  });
+}
+
+function renderMemberRows(){
+  const c=state.settings.currency||'৳';
+  document.getElementById('memberYearLabel').textContent=currentYear;
+  const tbody=document.getElementById('membersTbody');
+  tbody.innerHTML='';
+  state.members.forEach(m=>{
+    const total=getMemberTotal(m.id,currentYear);
+    const isEditing=(editingMemberId===m.id);
+    const tr=document.createElement('tr');
+    if(isEditing) tr.classList.add('editing');
+    if(isEditing){
+      tr.innerHTML=`
+        <td style="color:var(--text2)">${m.id}</td>
+        <td><input class="edit-input" id="edit-name-${m.id}" value="${m.name.replace(/"/g,'&quot;')}" style="min-width:160px"
+          onkeydown="if(event.key==='Enter')saveMemberEdit(${m.id});if(event.key==='Escape')cancelMemberEdit()" /></td>
+        <td><input class="edit-input" id="edit-phone-${m.id}" value="${(m.phone||'')}" style="min-width:120px"
+          onkeydown="if(event.key==='Enter')saveMemberEdit(${m.id});if(event.key==='Escape')cancelMemberEdit()" /></td>
+        <td>${c}${total.toLocaleString()}</td>
+        <td><div class="row-actions">
+          <button class="btn btn-primary btn-sm" id="save-edit-btn-${m.id}" onclick="saveMemberEdit(${m.id})"><i class="ti ti-check"></i> Save</button>
+          <button class="btn btn-sm" onclick="cancelMemberEdit()">Cancel</button>
+        </div></td>`;
+    } else {
+      tr.innerHTML=`
+        <td style="color:var(--text2)">${m.id}</td>
+        <td style="font-weight:500">${m.name}</td>
+        <td style="color:var(--text2)">${m.phone||'—'}</td>
+        <td>${c}${total.toLocaleString()}</td>
+        <td><div class="row-actions">
+          <button class="btn btn-sm" onclick="startMemberEdit(${m.id})"><i class="ti ti-edit"></i> Edit</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteMember(${m.id})"><i class="ti ti-trash"></i></button>
+        </div></td>`;
+    }
+    tbody.appendChild(tr);
+  });
+  if(editingMemberId!==null){
+    requestAnimationFrame(()=>{
+      const inp=document.getElementById('edit-name-'+editingMemberId);
+      if(inp){inp.focus();inp.select();}
+    });
+  }
+}
+
+function startMemberEdit(id){editingMemberId=id;renderMemberRows();}
+function cancelMemberEdit(){editingMemberId=null;renderMemberRows();}
+
+function saveMemberEdit(id){
+  const nameEl=document.getElementById('edit-name-'+id);
+  const phoneEl=document.getElementById('edit-phone-'+id);
+  if(!nameEl)return;
+  const name=nameEl.value.trim();
+  const phone=phoneEl?phoneEl.value.trim():'';
+  if(!name){nameEl.focus();return;}
+  const btn=document.getElementById('save-edit-btn-'+id);
+  if(btn){btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';}
+  api({action:'editMember',password:adminPassword,memberId:id,name,phone}).then(d=>{
+    if(d.ok){
+      const idx=state.members.findIndex(m=>m.id===id);
+      if(idx>-1){state.members[idx].name=name;state.members[idx].phone=phone;}
+      editingMemberId=null;
+      renderMemberRows();
+      flashSaved();
+    } else {
+      alert('Save failed: '+(d.error||'error'));
+      if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Save';}
+    }
+  }).catch(()=>{alert('Network error.');if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Save';}});
+}
+
+function deleteMember(id){
+  const m=state.members.find(m=>m.id===id);
+  if(!confirm(`Remove ${m?m.name:'this member'}? Payment records remain saved.`))return;
+  api({action:'deleteMember',password:adminPassword,memberId:id}).then(d=>{
+    if(d.ok){
+      state.members=state.members.filter(m=>m.id!==id);
+      if(editingMemberId===id)editingMemberId=null;
+      renderMemberRows();
+    } else alert('Delete failed: '+(d.error||'error'));
+  }).catch(()=>alert('Network error.'));
+}
+
+/* ══════════ SETTINGS (admin only) ══════════ */
+function renderSettings(){
+  const s=state.settings;
+  const years=getYears();
+  document.getElementById('page-settings').innerHTML=`
+  <div class="card" style="max-width:500px">
+    <h2 style="font-size:15px;font-weight:500;margin-bottom:1rem">General settings</h2>
+    <div id="settings-alert"></div>
+    <div class="form-grid">
+      <div><div class="form-label">Opening balance</div>
+        <input type="number" id="s-ob" value="${s.openingBalance||5000}" style="width:100%"
+          onkeydown="if(event.key==='Enter')saveSettings()" /></div>
+      <div><div class="form-label">Monthly target per member</div>
+        <input type="number" id="s-mt" value="${s.monthlyTarget||3000}" style="width:100%"
+          onkeydown="if(event.key==='Enter')saveSettings()" /></div>
+    </div>
+    <div style="margin-bottom:14px"><div class="form-label">Currency symbol</div>
+      <input type="text" id="s-cur" value="${s.currency||'৳'}" style="width:80px"
+        onkeydown="if(event.key==='Enter')saveSettings()" /></div>
+    <button class="btn btn-primary" id="saveSettingsBtn" onclick="saveSettings()">Save settings</button>
+
+    <h2 style="font-size:15px;font-weight:500;margin:2rem 0 1rem">Year management</h2>
+    <div style="display:flex;gap:8px;margin-bottom:1rem;align-items:center">
+      <input type="number" id="new-year" value="${new Date().getFullYear()}" style="width:110px"
+        onkeydown="if(event.key==='Enter')addYear()" />
+      <button class="btn btn-primary btn-sm" onclick="addYear()">Add year</button>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">
+      ${years.sort().map(y=>`<span style="padding:4px 14px;border:0.5px solid var(--border2);border-radius:99px;font-size:12px">${y}</span>`).join('')}
+    </div>
+
+    <h2 style="font-size:15px;font-weight:500;margin:2rem 0 1rem">Export data</h2>
+    <button class="btn" onclick="exportCSV()"><i class="ti ti-download"></i> Download CSV</button>
+
+    <h2 style="font-size:15px;font-weight:500;margin:2rem 0 1rem">Reconfigure</h2>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:10px">Change which Google Sheet this app connects to.</p>
+    <button class="btn btn-danger btn-sm" onclick="if(confirm('Reset connection? You can reconnect to any sheet.')){localStorage.removeItem('${STORAGE_URL_KEY}');location.reload();}">Reset connection</button>
+  </div>`;
+}
+
+function saveSettings(){
+  const btn=document.getElementById('saveSettingsBtn');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Saving...';
+  const s={
+    openingBalance:parseFloat(document.getElementById('s-ob').value)||0,
+    monthlyTarget:parseFloat(document.getElementById('s-mt').value)||3000,
+    currency:document.getElementById('s-cur').value||'৳'
+  };
+  api({action:'saveSettings',password:adminPassword,...s}).then(d=>{
+    btn.disabled=false;btn.innerHTML='Save settings';
+    if(d.ok){
+      state.settings={...state.settings,...s};
+      document.getElementById('settings-alert').innerHTML='<div class="alert success">Settings saved!</div>';
+      setTimeout(()=>{const al=document.getElementById('settings-alert');if(al)al.innerHTML='';},2500);
+    } else {
+      document.getElementById('settings-alert').innerHTML='<div class="alert error">'+(d.error||'Error')+'</div>';
+    }
+  }).catch(()=>{btn.disabled=false;btn.innerHTML='Save settings';alert('Network error.');});
+}
+
+function addYear(){
+  const y=parseInt(document.getElementById('new-year').value);
+  if(!y||isNaN(y))return;
+  const years=getYears();
+  if(!years.includes(y)){years.push(y);saveYears(years);}
+  populateYearSelect();
+  renderSettings();
+}
+
+/* ══════════ EXPORT ══════════ */
+function exportCSV(){
+  const c=state.settings.currency||'৳';
+  let csv='ID,Name,Phone,'+MONTHS.join(',')+',Year Total,Status\n';
+  state.members.forEach(m=>{
+    const months=MONTHS.map((_,i)=>getPayment(m.id,currentYear,i)).join(',');
+    const total=getMemberTotal(m.id,currentYear);
+    csv+=`${m.id},"${m.name}",${m.phone||''},${months},${total},${getStatus(m.id,currentYear)}\n`;
+  });
+  const s=state.settings;
+  csv+=`\nOpening Balance,${s.openingBalance||0}\nTotal Collected ${currentYear},${getAllTotal(currentYear)}\nGrand Total,${Number(s.openingBalance||0)+getAllTotal(currentYear)}\n`;
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`samity_${currentYear}.csv`;
+  a.click();
+}
+
+/* ══════════ YEAR SELECT ══════════ */
+function populateYearSelect(){
+  const sel=document.getElementById('yearSel');
+  if(!sel)return;
+  const years=getYears();
+  sel.innerHTML=years.sort().map(y=>`<option value="${y}"${y===currentYear?' selected':''}>${y}</option>`).join('');
+  sel.onchange=()=>{currentYear=parseInt(sel.value);render();};
+}
+
+/* ══════════ RENDER ══════════ */
+function render(){
+  populateYearSelect();
+  if(currentTab==='dashboard') renderDashboard();
+  else if(currentTab==='payments') renderPayments();
+  else if(currentTab==='members') renderMemberRows();
+  else if(currentTab==='settings') renderSettings();
+}
+
+start();
+</script>
+</body>
+</html>
