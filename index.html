@@ -90,6 +90,18 @@ tr.editing:hover td{background:var(--edit-bg)}
 .step-desc{font-size:13px;color:var(--text2);line-height:1.6}
 .url-input{width:100%;margin-top:8px;font-family:monospace;font-size:12px}
 .admin-badge{font-size:11px;background:var(--yellow-bg);color:var(--yellow-text);padding:2px 8px;border-radius:99px;margin-left:6px}
+@media(max-width:600px){
+  .app{padding:.5rem}
+  header{padding:.6rem .75rem}
+  header h1{font-size:16px}
+  .hdr-right{gap:4px}
+  .btn-label{display:none}
+  .tabs{padding:3px;gap:2px}
+  .tab{padding:5px 8px;font-size:11px}
+  .form-grid{grid-template-columns:1fr}
+  .setup-card{margin:.5rem auto}
+  .metrics{grid-template-columns:repeat(2,1fr)}
+}
 </style>
 </head>
 <body>
@@ -155,13 +167,13 @@ tr.editing:hover td{background:var(--edit-bg)}
         <span class="saved-pill" id="savedPill">✓ Saved</span>
         <span id="adminBadge" class="admin-badge" style="display:none"><i class="ti ti-shield-check"></i> Admin</span>
         <select id="yearSel"></select>
-        <button class="btn" onclick="loadData(true)"><i class="ti ti-refresh"></i> Refresh</button>
-        <button class="btn btn-primary" id="exportBtn" onclick="exportCSV()"><i class="ti ti-download"></i> Export</button>
+        <button class="btn" onclick="loadData(true)"><i class="ti ti-refresh"></i> <span class="btn-label">Refresh</span></button>
+        <button class="btn btn-primary" id="exportBtn" onclick="exportCSV()"><i class="ti ti-download"></i> <span class="btn-label">Export</span></button>
         <button class="btn" id="adminLoginBtn" onclick="showAdminLogin()" style="display:none">
-          <i class="ti ti-lock"></i> Admin login
+          <i class="ti ti-lock"></i> <span class="btn-label">Admin login</span>
         </button>
         <button class="btn btn-danger btn-sm" id="adminLogoutBtn" onclick="adminLogout()" style="display:none">
-          Logout
+          <span class="btn-label">Logout</span>
         </button>
       </div>
     </header>
@@ -222,7 +234,7 @@ tr.editing:hover td{background:var(--edit-bg)}
 
     <!-- Admin login modal -->
     <div id="adminModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;display:none;align-items:center;justify-content:center">
-      <div style="background:var(--bg);border-radius:var(--radius-lg);padding:1.5rem;width:320px;border:0.5px solid var(--border)">
+      <div style="background:var(--bg);border-radius:var(--radius-lg);padding:1.5rem;width:min(320px,calc(100vw - 2rem));border:0.5px solid var(--border)">
         <h2 style="font-size:15px;font-weight:500;margin-bottom:1rem"><i class="ti ti-lock"></i> Admin login</h2>
         <div class="form-label">Password</div>
         <input type="password" id="adminPwInput" style="width:100%;margin-bottom:12px"
