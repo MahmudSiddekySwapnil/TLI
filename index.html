@@ -512,10 +512,13 @@ function renderDashboard(){
 
   document.getElementById('page-dashboard').innerHTML=`
   <div class="metrics">
-    <div class="metric"><div class="metric-label">Opening balance</div><div class="metric-value">${c}${Number(s.openingBalance||0).toLocaleString()}</div></div>
+    <div class="metric"><div class="metric-label">Prior savings</div><div class="metric-value">${c}${Number(s.openingBalance||0).toLocaleString()}</div></div>
     <div class="metric"><div class="metric-label">Collected ${currentYear}</div><div class="metric-value green">${c}${total.toLocaleString()}</div></div>
     <div class="metric"><div class="metric-label">Grand total</div><div class="metric-value">${c}${grand.toLocaleString()}</div></div>
     <div class="metric"><div class="metric-label">Total members</div><div class="metric-value">${state.members.length}</div></div>
+  </div>
+  <div style="font-size:12px;color:var(--text2);margin:-4px 0 14px;padding:0 2px">
+    Grand total = prior savings (${c}${Number(s.openingBalance||0).toLocaleString()}) + collected this year (${c}${total.toLocaleString()})
   </div>
   <div class="metrics">
     <div class="metric"><div class="metric-label">${SHORT[mo]} paid</div><div class="metric-value green">${paid}</div></div>
@@ -743,9 +746,15 @@ function renderSettings(){
     <h2 style="font-size:15px;font-weight:500;margin-bottom:1rem">General settings</h2>
     <div id="settings-alert"></div>
     <div class="form-grid">
-      <div><div class="form-label">Opening balance</div>
+      <div>
+        <div class="form-label">Prior savings / carry-forward</div>
         <input type="number" id="s-ob" value="${s.openingBalance||5000}" style="width:100%"
-          onkeydown="if(event.key==='Enter')saveSettings()" /></div>
+          onkeydown="if(event.key==='Enter')saveSettings()" />
+        <div style="font-size:12px;color:var(--text2);margin-top:5px;line-height:1.55">
+          Money saved <em>before</em> you started recording payments in this app.<br>
+          <strong style="color:var(--red-text)">⚠ Do not include amounts already entered in the Payments tab</strong> — that causes double-counting in the grand total.
+        </div>
+      </div>
       <div><div class="form-label">Monthly target per member</div>
         <input type="number" id="s-mt" value="${s.monthlyTarget||3000}" style="width:100%"
           onkeydown="if(event.key==='Enter')saveSettings()" /></div>
