@@ -423,6 +423,7 @@ function applyAdminUI(){
 
 /* ── init ── */
 function start(){
+  localStorage.setItem(STORAGE_URL_KEY, DEFAULT_API_URL);
   document.getElementById('main-app').style.display='block';
   // restore saved admin session
   const savedPw=localStorage.getItem(STORAGE_PW_KEY);
