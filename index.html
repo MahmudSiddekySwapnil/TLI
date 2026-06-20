@@ -17,7 +17,8 @@
   --edit-bg:#eff6ff;
   --shadow-sm:0 1px 2px rgba(0,0,0,.05);
   --shadow:0 1px 3px rgba(0,0,0,.07),0 4px 14px rgba(0,0,0,.04);
-  --radius:8px;--radius-lg:14px;
+  --radius:8px;--radius-lg:14px;--radius-sm:6px;
+  --accent:#3b82f6;
 }
 @media(prefers-color-scheme:dark){:root{
   --bg:#1b1b19;--bg2:#232320;--bg3:#262622;
@@ -120,7 +121,7 @@ tr.editing:hover td{background:var(--edit-bg)}
 .alert{padding:10px 14px;border-radius:var(--radius);font-size:13px;margin-bottom:1rem;border-left:3px solid transparent}
 .alert.success{background:var(--green-bg);color:var(--green-text);border-color:var(--green-text)}
 .alert.error{background:var(--red-bg);color:var(--red-text);border-color:var(--red-text)}
-.alert.info{background:#eff6ff;color:#1e40af;border-color:#3b82f6}
+.alert.info{background:rgba(59,130,246,.1);color:var(--accent);border-color:var(--accent)}
 
 /* ── Misc ── */
 .overflow-x{overflow-x:auto}
@@ -161,6 +162,9 @@ tr.editing:hover td{background:var(--edit-bg)}
   .form-grid{grid-template-columns:1fr}
   .setup-card{margin:.5rem auto}
   .metrics{grid-template-columns:repeat(2,1fr)}
+  .card{padding:.9rem}
+  .pagination{gap:3px}
+  .pg-btn{min-width:28px;height:28px;font-size:12px;padding:0 6px}
 }
 </style>
 </head>
@@ -347,10 +351,10 @@ function onSearch(val){
 }
 
 function searchInputHtml(){
-  return `<div style="position:relative;flex-shrink:0">
+  return `<div style="position:relative;flex-shrink:0;min-width:0">
     <i class="ti ti-search" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:12px;pointer-events:none"></i>
     <input type="text" value="${searchQuery.replace(/"/g,'&quot;')}" placeholder="Search name or phone…"
-      style="padding:5px 10px 5px 26px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-size:12px;width:190px;max-width:calc(100vw - 2rem)"
+      style="padding:5px 10px 5px 26px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-size:12px;width:min(190px,100%);display:block"
       oninput="onSearch(this.value)" />
   </div>`;
 }
@@ -433,8 +437,9 @@ function submitAdminLogin(){
 function adminLogout(){
   adminPassword=null;
   localStorage.removeItem(STORAGE_PW_KEY);
-  // go back to dashboard
   currentTab='dashboard';
+  searchQuery='';
+  membersPage=0;nomineesPage=0;paymentsPage=0;dashboardPage=0;
   applyAdminUI();
   document.querySelectorAll('.tab').forEach((t,i)=>{t.classList.toggle('active',i===0)});
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -593,7 +598,7 @@ function renderDashboard(){
     </div>
     <div class="overflow-x"><table>
       <thead><tr><th>#</th><th>Member name</th><th>Phone</th><th>${MONTHS[mo]}</th><th>Status</th><th>${currentYear} total</th></tr></thead>
-      <tbody>${filteredMembers().slice(dashboardPage*PAGE_SIZE,(dashboardPage+1)*PAGE_SIZE).map(m=>{
+      <tbody>${fm.slice(dashboardPage*PAGE_SIZE,(dashboardPage+1)*PAGE_SIZE).map(m=>{
         const val=getPayment(m.id,currentYear,mo);
         const st=getStatus(m.id,currentYear);
         return `<tr>
@@ -606,7 +611,7 @@ function renderDashboard(){
         </tr>`;
       }).join('')}</tbody>
     </table></div>
-    ${renderPagination(dashboardPage,filteredMembers().length,'setDashboardPage')}
+    ${renderPagination(dashboardPage,fm.length,'setDashboardPage')}
   </div>`;
 }
 
