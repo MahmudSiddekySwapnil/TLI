@@ -255,6 +255,7 @@ tr.editing:hover td{background:var(--edit-bg)}
 
     <!-- Dashboard -->
     <div id="page-dashboard" class="page active">
+      <div id="dash-loading" style="display:none"></div>
       <div id="dash-metrics-top" class="metrics"></div>
       <div id="dash-formula-note" style="font-size:12px;color:var(--text2);margin:-4px 0 14px;padding:0 2px"></div>
       <div id="dash-metrics-mid" class="metrics"></div>
@@ -475,6 +476,10 @@ function submitAdminLogin(){
       localStorage.setItem(STORAGE_PW_KEY,pw);
       closeAdminModal();
       applyAdminUI();
+      ['dashSearchWrap','paymentsSearchWrap','nomineesSearchWrap','memberSearchWrap'].forEach(id=>{
+        const el=document.getElementById(id);if(el)el.innerHTML='';
+      });
+      render();
     } else {
       document.getElementById('adminLoginAlert').innerHTML='<div class="alert error">Wrong password.</div>';
     }
@@ -489,6 +494,9 @@ function adminLogout(){
   currentTab='dashboard';
   searchQuery='';
   membersPage=0;nomineesPage=0;paymentsPage=0;dashboardPage=0;
+  ['dashSearchWrap','paymentsSearchWrap','nomineesSearchWrap','memberSearchWrap'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.innerHTML='';
+  });
   applyAdminUI();
   document.querySelectorAll('.tab').forEach((t,i)=>{t.classList.toggle('active',i===0)});
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -522,15 +530,28 @@ function start(){
 }
 
 function loadData(showRefresh){
-  const dashEl=document.getElementById('page-dashboard');
+  const loadEl=document.getElementById('dash-loading');
+  function showLoading(html){
+    if(loadEl){loadEl.innerHTML=html;loadEl.style.display='block';}
+    ['dash-metrics-top','dash-formula-note','dash-metrics-mid'].forEach(id=>{
+      const el=document.getElementById(id);if(el)el.innerHTML='';
+    });
+    const card=document.querySelector('#page-dashboard .card');
+    if(card)card.style.display='none';
+  }
+  function hideLoading(){
+    if(loadEl){loadEl.innerHTML='';loadEl.style.display='none';}
+    const card=document.querySelector('#page-dashboard .card');
+    if(card)card.style.display='';
+  }
   if(showRefresh||!state.members.length){
-    dashEl.innerHTML='<div class="loading-overlay"><span class="spinner"></span> Loading data...</div>';
+    showLoading('<div class="loading-overlay"><span class="spinner"></span> Loading data...</div>');
   }
   api({action:'getAll'}).then(d=>{
-    if(d.ok) initApp(d);
-    else dashEl.innerHTML='<div class="card"><div class="alert error">Failed to load: '+(d.error||'unknown')+'</div></div>';
+    if(d.ok){hideLoading();initApp(d);}
+    else showLoading('<div class="card"><div class="alert error">Failed to load: '+(d.error||'unknown')+'</div></div>');
   }).catch(()=>{
-    dashEl.innerHTML='<div class="card"><div class="alert error">Cannot reach server. Check your internet connection.</div></div>';
+    showLoading('<div class="card"><div class="alert error">Cannot reach server. Check your internet connection.</div></div>');
   });
 }
 
