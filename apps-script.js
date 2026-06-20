@@ -5,7 +5,7 @@
 // SHA-256 hash of the admin password — never store the plaintext here.
 // To change password: run hashPw("yournewpassword") in the Apps Script console,
 // copy the result, and replace the string below.
-const ADMIN_PASSWORD_HASH = "bfb35a38abc92182f6e3102d5683c967cb95c998b60991af164af9cb52eb3b43"; // samity2024
+const ADMIN_PASSWORD_HASH = "bfb35a38abc92182f6e3102d5683c967cb95c998b60991af164af9cb52eb3b43";
 const SHEET_ID = "1UvoVp3zPOlHD_Ht8Ce0SOj92FH-YocImm4IK8a4LYHM";
 
 function doGet(e)  { return handle(e); }

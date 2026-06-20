@@ -141,11 +141,12 @@ user clicks ✓
 ## Configuration
 
 ### Change the admin password
-In `apps-script.js`, line 5:
+In `apps-script.js`, replace `ADMIN_PASSWORD_HASH` with the SHA-256 hash of your new password.
+To get the hash, run this in the Apps Script editor console:
 ```js
-const ADMIN_PASSWORD = "samity2024"; // ← change this
+Logger.log(hashPw("yournewpassword"))
 ```
-Then redeploy as a new version.
+Copy the logged value, paste it as the new `ADMIN_PASSWORD_HASH`, then redeploy as a new version.
 
 ### Change the connected Google Sheet
 In `apps-script.js`, line 6:
