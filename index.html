@@ -142,6 +142,13 @@ tr.editing:hover td{background:var(--edit-bg)}
 .url-input{width:100%;margin-top:8px;font-family:monospace;font-size:12px}
 .admin-badge{font-size:11px;background:var(--yellow-bg);color:var(--yellow-text);padding:2px 8px;border-radius:99px;margin-left:6px;font-weight:600}
 
+/* ── Pagination ── */
+.pagination{display:flex;gap:4px;justify-content:center;padding:1rem 0 .25rem;flex-wrap:wrap}
+.pg-btn{min-width:32px;height:32px;border:0.5px solid var(--border2);background:var(--bg);color:var(--text);border-radius:var(--radius-sm);cursor:pointer;font-size:13px;padding:0 8px;transition:background .15s,border-color .15s}
+.pg-btn:hover:not(:disabled){background:var(--bg2)}
+.pg-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.pg-btn:disabled{opacity:.35;cursor:default}
+
 /* ── Mobile ── */
 @media(max-width:600px){
   .app{padding:.5rem}
@@ -285,6 +292,7 @@ tr.editing:hover td{background:var(--edit-bg)}
             <tbody id="membersTbody"></tbody>
           </table>
         </div>
+        <div id="membersPagination"></div>
       </div>
     </div>
 
@@ -319,6 +327,8 @@ const DEFAULT_API_URL='https://script.google.com/macros/s/AKfycbxUdw1J9lL4g4TqiN
 /* ── in-memory state ── */
 let state={members:[],payments:{},settings:{openingBalance:5000,monthlyTarget:3000,currency:'৳'},nominees:{}};
 let currentTab='dashboard';
+const PAGE_SIZE=10;
+let membersPage=0,nomineesPage=0,paymentsPage=0,dashboardPage=0;
 let currentYear=new Date().getFullYear();
 let editingMemberId=null;
 let adminPassword=null; // null = viewer, string = admin
@@ -495,12 +505,30 @@ function switchTab(tab,el){
   }
   if(currentTab==='nominees') editingNomineeId=null;
   currentTab=tab;
+  membersPage=0;nomineesPage=0;paymentsPage=0;dashboardPage=0;
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+tab).classList.add('active');
   render();
 }
+
+/* ══════════ PAGINATION ══════════ */
+function renderPagination(page,total,setter){
+  const pages=Math.ceil(total/PAGE_SIZE);
+  if(pages<=1)return '';
+  let h=`<div class="pagination">`;
+  h+=`<button class="pg-btn" ${page===0?'disabled':''} onclick="${setter}(${page-1})"><i class="ti ti-chevron-left"></i></button>`;
+  for(let i=0;i<pages;i++)
+    h+=`<button class="pg-btn${i===page?' active':''}" onclick="${setter}(${i})">${i+1}</button>`;
+  h+=`<button class="pg-btn" ${page===pages-1?'disabled':''} onclick="${setter}(${page+1})"><i class="ti ti-chevron-right"></i></button>`;
+  h+=`</div>`;
+  return h;
+}
+function setDashboardPage(p){dashboardPage=p;renderDashboard();}
+function setPaymentsPage(p){paymentsPage=p;renderPayments();}
+function setMembersPage(p){membersPage=p;renderMemberRows();}
+function setNomineesPage(p){nomineesPage=p;renderNominees();}
 
 /* ══════════ DASHBOARD ══════════ */
 function renderDashboard(){
@@ -535,7 +563,7 @@ function renderDashboard(){
     <h2 style="font-size:15px;font-weight:500;margin-bottom:1rem">${MONTHS[mo]} ${currentYear} — payment status</h2>
     <div class="overflow-x"><table>
       <thead><tr><th>#</th><th>Member name</th><th>Phone</th><th>${MONTHS[mo]}</th><th>Status</th><th>${currentYear} total</th></tr></thead>
-      <tbody>${state.members.map(m=>{
+      <tbody>${state.members.slice(dashboardPage*PAGE_SIZE,(dashboardPage+1)*PAGE_SIZE).map(m=>{
         const val=getPayment(m.id,currentYear,mo);
         const st=getStatus(m.id,currentYear);
         return `<tr>
@@ -548,6 +576,7 @@ function renderDashboard(){
         </tr>`;
       }).join('')}</tbody>
     </table></div>
+    ${renderPagination(dashboardPage,state.members.length,'setDashboardPage')}
   </div>`;
 }
 
@@ -558,11 +587,12 @@ function renderPayments(){
   const editable=isAdmin();
   let h=`<div class="card">`;
   if(!editable) h+=`<div class="alert info" style="margin-bottom:1rem"><i class="ti ti-info-circle"></i> View only — <a href="#" onclick="showAdminLogin();return false">admin login</a> required to edit payments.</div>`;
+  const pagedMembers=state.members.slice(paymentsPage*PAGE_SIZE,(paymentsPage+1)*PAGE_SIZE);
   h+=`<div class="overflow-x"><table>
     <thead><tr><th>#</th><th>Member</th>`;
   SHORT.forEach(mn=>h+=`<th style="min-width:${editable?'62':'45'}px">${mn}</th>`);
   h+=`<th>Total</th><th>Status</th></tr></thead><tbody>`;
-  state.members.forEach(m=>{
+  pagedMembers.forEach(m=>{
     const total=getMemberTotal(m.id,currentYear);
     const st=getStatus(m.id,currentYear);
     h+=`<tr><td style="color:var(--text2)">${m.id}</td><td style="font-weight:500;white-space:nowrap">${m.name}</td>`;
@@ -584,7 +614,9 @@ function renderPayments(){
     h+=`<td id="mcol-${mo}" style="font-weight:500;font-size:12px">${c}${t.toLocaleString()}</td>`;
   }
   h+=`<td id="grand-col" style="font-weight:500">${c}${getAllTotal(currentYear).toLocaleString()}</td><td></td></tr>`;
-  h+=`</tbody></table></div></div>`;
+  h+=`</tbody></table></div>`;
+  h+=renderPagination(paymentsPage,state.members.length,'setPaymentsPage');
+  h+=`</div>`;
   document.getElementById('page-payments').innerHTML=h;
 }
 
@@ -666,7 +698,8 @@ function renderMemberRows(){
   document.getElementById('memberYearLabel').textContent=currentYear;
   const tbody=document.getElementById('membersTbody');
   tbody.innerHTML='';
-  state.members.forEach(m=>{
+  const pagedMembers=state.members.slice(membersPage*PAGE_SIZE,(membersPage+1)*PAGE_SIZE);
+  pagedMembers.forEach(m=>{
     const total=getMemberTotal(m.id,currentYear);
     const isEditing=(editingMemberId===m.id);
     const tr=document.createElement('tr');
@@ -696,6 +729,8 @@ function renderMemberRows(){
     }
     tbody.appendChild(tr);
   });
+  const pgEl=document.getElementById('membersPagination');
+  if(pgEl)pgEl.innerHTML=renderPagination(membersPage,state.members.length,'setMembersPage');
   if(editingMemberId!==null){
     requestAnimationFrame(()=>{
       const inp=document.getElementById('edit-name-'+editingMemberId);
@@ -704,7 +739,11 @@ function renderMemberRows(){
   }
 }
 
-function startMemberEdit(id){editingMemberId=id;renderMemberRows();}
+function startMemberEdit(id){
+  const idx=state.members.findIndex(m=>m.id===id);
+  if(idx>-1)membersPage=Math.floor(idx/PAGE_SIZE);
+  editingMemberId=id;renderMemberRows();
+}
 function cancelMemberEdit(){editingMemberId=null;renderMemberRows();}
 
 function saveMemberEdit(id){
@@ -849,6 +888,7 @@ function renderNominees(){
       </div>
     </div>`;
   if(!editable) h+=`<div class="alert info" style="margin-top:1rem"><i class="ti ti-info-circle"></i> View only — <a href="#" onclick="showAdminLogin();return false">admin login</a> required to edit.</div>`;
+  const pagedNominees=state.members.slice(nomineesPage*PAGE_SIZE,(nomineesPage+1)*PAGE_SIZE);
   h+=`<div class="overflow-x" style="margin-top:1rem"><table>
     <thead><tr>
       <th style="width:36px">#</th>
@@ -858,7 +898,7 @@ function renderNominees(){
       <th>Relation</th>
       ${editable?'<th style="width:70px">Edit</th>':''}
     </tr></thead><tbody>`;
-  state.members.forEach(m=>{
+  pagedNominees.forEach(m=>{
     const n=nominees[String(m.id)]||{};
     const isEmpty=!n.name&&!n.phone&&!n.relation;
     if(editingNomineeId===m.id){
@@ -887,7 +927,9 @@ function renderNominees(){
       </tr>`;
     }
   });
-  h+=`</tbody></table></div></div>`;
+  h+=`</tbody></table></div>`;
+  h+=renderPagination(nomineesPage,state.members.length,'setNomineesPage');
+  h+=`</div>`;
   document.getElementById('page-nominees').innerHTML=h;
   if(editingNomineeId!==null){
     requestAnimationFrame(()=>{
@@ -899,6 +941,8 @@ function renderNominees(){
 
 function startNomineeEdit(id){
   if(!isAdmin()){showAdminLogin();return;}
+  const idx=state.members.findIndex(m=>m.id===id);
+  if(idx>-1)nomineesPage=Math.floor(idx/PAGE_SIZE);
   editingNomineeId=id;
   renderNominees();
 }
