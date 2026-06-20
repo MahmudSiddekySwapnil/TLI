@@ -249,15 +249,6 @@ tr.editing:hover td{background:var(--edit-bg)}
       <button class="tab admin-only" onclick="switchTab('settings',this)" style="display:none"><i class="ti ti-settings"></i> Settings</button>
     </div>
 
-    <div id="search-bar" style="padding:.4rem 0 0">
-      <div style="position:relative;max-width:300px">
-        <i class="ti ti-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:13px;pointer-events:none"></i>
-        <input type="text" id="memberSearch" placeholder="Search name or phone…"
-          style="width:100%;padding:7px 12px 7px 32px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:13px;box-sizing:border-box"
-          oninput="onSearch(this.value)" />
-      </div>
-    </div>
-
     <div id="page-dashboard" class="page active"></div>
     <div id="page-payments" class="page"></div>
     <div id="page-nominees" class="page"></div>
@@ -265,9 +256,12 @@ tr.editing:hover td{background:var(--edit-bg)}
     <!-- Members tab static shell -->
     <div id="page-members" class="page">
       <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap">
           <h2 style="font-size:15px;font-weight:500">All members</h2>
-          <button class="btn btn-primary btn-sm" onclick="toggleAddForm()"><i class="ti ti-plus"></i> Add member</button>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <div id="memberSearchWrap"></div>
+            <button class="btn btn-primary btn-sm" onclick="toggleAddForm()"><i class="ti ti-plus"></i> Add member</button>
+          </div>
         </div>
         <div class="add-form-box" id="addMemberForm" style="display:none">
           <div class="form-grid">
@@ -350,6 +344,15 @@ function onSearch(val){
   searchQuery=val.trim();
   membersPage=0;nomineesPage=0;paymentsPage=0;dashboardPage=0;
   render();
+}
+
+function searchInputHtml(){
+  return `<div style="position:relative;flex-shrink:0">
+    <i class="ti ti-search" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:12px;pointer-events:none"></i>
+    <input type="text" value="${searchQuery.replace(/"/g,'&quot;')}" placeholder="Search name or phone…"
+      style="padding:5px 10px 5px 26px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-size:12px;width:190px;max-width:calc(100vw - 2rem)"
+      oninput="onSearch(this.value)" />
+  </div>`;
 }
 let currentYear=new Date().getFullYear();
 let editingMemberId=null;
@@ -529,9 +532,6 @@ function switchTab(tab,el){
   currentTab=tab;
   membersPage=0;nomineesPage=0;paymentsPage=0;dashboardPage=0;
   searchQuery='';
-  const sb=document.getElementById('memberSearch');if(sb)sb.value='';
-  const sbar=document.getElementById('search-bar');
-  if(sbar)sbar.style.display=(tab==='settings')?'none':'block';
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -587,7 +587,10 @@ function renderDashboard(){
     <div class="metric"><div class="metric-label">${SHORT[mo]} collected</div><div class="metric-value">${c}${moCol.toLocaleString()}</div></div>
   </div>
   <div class="card">
-    <h2 style="font-size:15px;font-weight:500;margin-bottom:1rem">${MONTHS[mo]} ${currentYear} — payment status</h2>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap">
+      <h2 style="font-size:15px;font-weight:500">${MONTHS[mo]} ${currentYear} — payment status</h2>
+      ${searchInputHtml()}
+    </div>
     <div class="overflow-x"><table>
       <thead><tr><th>#</th><th>Member name</th><th>Phone</th><th>${MONTHS[mo]}</th><th>Status</th><th>${currentYear} total</th></tr></thead>
       <tbody>${filteredMembers().slice(dashboardPage*PAGE_SIZE,(dashboardPage+1)*PAGE_SIZE).map(m=>{
@@ -612,7 +615,11 @@ function renderPayments(){
   const s=state.settings;
   const c=s.currency||'৳';
   const editable=isAdmin();
-  let h=`<div class="card">`;
+  let h=`<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap">
+    <h2 style="font-size:15px;font-weight:500">Payments ${currentYear}</h2>
+    ${searchInputHtml()}
+  </div>`;
   if(!editable) h+=`<div class="alert info" style="margin-bottom:1rem"><i class="ti ti-info-circle"></i> View only — <a href="#" onclick="showAdminLogin();return false">admin login</a> required to edit payments.</div>`;
   const fm=filteredMembers();
   const pagedMembers=fm.slice(paymentsPage*PAGE_SIZE,(paymentsPage+1)*PAGE_SIZE);
@@ -724,6 +731,8 @@ function addMember(){
 function renderMemberRows(){
   const c=state.settings.currency||'৳';
   document.getElementById('memberYearLabel').textContent=currentYear;
+  const swrap=document.getElementById('memberSearchWrap');
+  if(swrap)swrap.innerHTML=searchInputHtml();
   const tbody=document.getElementById('membersTbody');
   tbody.innerHTML='';
   const fm2=filteredMembers();
@@ -910,11 +919,12 @@ function renderNominees(){
   const nominees=state.nominees;
   const editable=isAdmin();
   let h=`<div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.25rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:.25rem;flex-wrap:wrap">
       <div>
         <h2 style="font-size:15px;font-weight:600">Member Nominees</h2>
         <p style="font-size:12px;color:var(--text2);margin-top:3px">Emergency contacts — one nominee per member</p>
       </div>
+      ${searchInputHtml()}
     </div>`;
   if(!editable) h+=`<div class="alert info" style="margin-top:1rem"><i class="ti ti-info-circle"></i> View only — <a href="#" onclick="showAdminLogin();return false">admin login</a> required to edit.</div>`;
   const fm3=filteredMembers();
