@@ -253,9 +253,58 @@ tr.editing:hover td{background:var(--edit-bg)}
       <button class="tab admin-only" onclick="switchTab('settings',this)" style="display:none"><i class="ti ti-settings"></i> Settings</button>
     </div>
 
-    <div id="page-dashboard" class="page active"></div>
-    <div id="page-payments" class="page"></div>
-    <div id="page-nominees" class="page"></div>
+    <!-- Dashboard -->
+    <div id="page-dashboard" class="page active">
+      <div id="dash-metrics-top" class="metrics"></div>
+      <div id="dash-formula-note" style="font-size:12px;color:var(--text2);margin:-4px 0 14px;padding:0 2px"></div>
+      <div id="dash-metrics-mid" class="metrics"></div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap">
+          <h2 id="dash-card-title" style="font-size:15px;font-weight:500"></h2>
+          <div id="dashSearchWrap"></div>
+        </div>
+        <div class="overflow-x"><table>
+          <thead><tr id="dashThead"></tr></thead>
+          <tbody id="dashTbody"></tbody>
+        </table></div>
+        <div id="dashPagination"></div>
+      </div>
+    </div>
+
+    <!-- Payments -->
+    <div id="page-payments" class="page">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap">
+          <h2 id="payments-card-title" style="font-size:15px;font-weight:500"></h2>
+          <div id="paymentsSearchWrap"></div>
+        </div>
+        <div id="payments-alert"></div>
+        <div class="overflow-x"><table>
+          <thead id="paymentsThead"></thead>
+          <tbody id="paymentsTbody"></tbody>
+        </table></div>
+        <div id="paymentsPagination"></div>
+      </div>
+    </div>
+
+    <!-- Nominees -->
+    <div id="page-nominees" class="page">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:.25rem;flex-wrap:wrap">
+          <div>
+            <h2 style="font-size:15px;font-weight:600">Member Nominees</h2>
+            <p style="font-size:12px;color:var(--text2);margin-top:3px">Emergency contacts — one nominee per member</p>
+          </div>
+          <div id="nomineesSearchWrap"></div>
+        </div>
+        <div id="nominees-alert"></div>
+        <div class="overflow-x" style="margin-top:1rem"><table>
+          <thead id="nomineesThead"></thead>
+          <tbody id="nomineesTbody"></tbody>
+        </table></div>
+        <div id="nomineesPagination"></div>
+      </div>
+    </div>
 
     <!-- Members tab static shell -->
     <div id="page-members" class="page">
@@ -345,14 +394,9 @@ function filteredMembers(){
 }
 
 function onSearch(val){
-  searchQuery=val;  // keep raw (trim only when filtering)
+  searchQuery=val;
   membersPage=0;nomineesPage=0;paymentsPage=0;dashboardPage=0;
   render();
-  // restore focus and cursor after DOM rebuild
-  requestAnimationFrame(()=>{
-    const inp=document.querySelector('input[data-search]');
-    if(inp){inp.focus();const l=val.length;try{inp.setSelectionRange(l,l);}catch(e){}}
-  });
 }
 
 function searchInputHtml(){
@@ -542,6 +586,10 @@ function switchTab(tab,el){
   currentTab=tab;
   membersPage=0;nomineesPage=0;paymentsPage=0;dashboardPage=0;
   searchQuery='';
+  // clear search input containers so they re-render fresh on next render
+  ['dashSearchWrap','paymentsSearchWrap','nomineesSearchWrap','memberSearchWrap'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.innerHTML='';
+  });
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -580,44 +628,35 @@ function renderDashboard(){
   const partial=fm.filter(m=>getStatus(m.id,currentYear)==='partial').length;
   const moCol=fm.reduce((sum,m)=>sum+getPayment(m.id,currentYear,mo),0);
 
-  document.getElementById('page-dashboard').innerHTML=`
-  <div class="metrics">
+  document.getElementById('dash-metrics-top').innerHTML=`
     <div class="metric"><div class="metric-label">Prior savings</div><div class="metric-value">${c}${Number(s.openingBalance||0).toLocaleString()}</div></div>
     <div class="metric"><div class="metric-label">Collected ${currentYear}</div><div class="metric-value green">${c}${total.toLocaleString()}</div></div>
     <div class="metric"><div class="metric-label">Grand total</div><div class="metric-value">${c}${grand.toLocaleString()}</div></div>
-    <div class="metric"><div class="metric-label">Total members</div><div class="metric-value">${searchQuery?fm.length+' / '+state.members.length:state.members.length}</div></div>
-  </div>
-  <div style="font-size:12px;color:var(--text2);margin:-4px 0 14px;padding:0 2px">
-    Grand total = prior savings (${c}${Number(s.openingBalance||0).toLocaleString()}) + collected this year (${c}${total.toLocaleString()})
-  </div>
-  <div class="metrics">
+    <div class="metric"><div class="metric-label">Total members</div><div class="metric-value">${searchQuery?fm.length+' / '+state.members.length:state.members.length}</div></div>`;
+  document.getElementById('dash-formula-note').innerHTML=
+    `Grand total = prior savings (${c}${Number(s.openingBalance||0).toLocaleString()}) + collected this year (${c}${total.toLocaleString()})`;
+  document.getElementById('dash-metrics-mid').innerHTML=`
     <div class="metric"><div class="metric-label">${SHORT[mo]} paid</div><div class="metric-value green">${paid}</div></div>
     <div class="metric"><div class="metric-label">${SHORT[mo]} partial</div><div class="metric-value yellow">${partial}</div></div>
     <div class="metric"><div class="metric-label">${SHORT[mo]} unpaid</div><div class="metric-value red">${unpaid}</div></div>
-    <div class="metric"><div class="metric-label">${SHORT[mo]} collected</div><div class="metric-value">${c}${moCol.toLocaleString()}</div></div>
-  </div>
-  <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap">
-      <h2 style="font-size:15px;font-weight:500">${MONTHS[mo]} ${currentYear} — payment status</h2>
-      ${searchInputHtml()}
-    </div>
-    <div class="overflow-x"><table>
-      <thead><tr><th>#</th><th>Member name</th><th>Phone</th><th>${MONTHS[mo]}</th><th>Status</th><th>${currentYear} total</th></tr></thead>
-      <tbody>${fm.slice(dashboardPage*PAGE_SIZE,(dashboardPage+1)*PAGE_SIZE).map(m=>{
-        const val=getPayment(m.id,currentYear,mo);
-        const st=getStatus(m.id,currentYear);
-        return `<tr>
-          <td style="color:var(--text2)">${m.id}</td>
-          <td style="font-weight:500">${m.name}</td>
-          <td style="color:var(--text2)">${m.phone||'—'}</td>
-          <td>${c}${val.toLocaleString()}</td>
-          <td>${badgeHtml(st)}</td>
-          <td style="font-weight:500">${c}${getMemberTotal(m.id,currentYear).toLocaleString()}</td>
-        </tr>`;
-      }).join('')}</tbody>
-    </table></div>
-    ${renderPagination(dashboardPage,fm.length,'setDashboardPage')}
-  </div>`;
+    <div class="metric"><div class="metric-label">${SHORT[mo]} collected</div><div class="metric-value">${c}${moCol.toLocaleString()}</div></div>`;
+  document.getElementById('dash-card-title').textContent=`${MONTHS[mo]} ${currentYear} — payment status`;
+  const dsw=document.getElementById('dashSearchWrap');
+  if(dsw&&!dsw.querySelector('input[data-search]'))dsw.innerHTML=searchInputHtml();
+  document.getElementById('dashThead').innerHTML=`<th>#</th><th>Member name</th><th>Phone</th><th>${MONTHS[mo]}</th><th>Status</th><th>${currentYear} total</th>`;
+  document.getElementById('dashTbody').innerHTML=fm.slice(dashboardPage*PAGE_SIZE,(dashboardPage+1)*PAGE_SIZE).map(m=>{
+    const val=getPayment(m.id,currentYear,mo);
+    const st=getStatus(m.id,currentYear);
+    return `<tr>
+      <td style="color:var(--text2)">${m.id}</td>
+      <td style="font-weight:500">${m.name}</td>
+      <td style="color:var(--text2)">${m.phone||'—'}</td>
+      <td>${c}${val.toLocaleString()}</td>
+      <td>${badgeHtml(st)}</td>
+      <td style="font-weight:500">${c}${getMemberTotal(m.id,currentYear).toLocaleString()}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('dashPagination').innerHTML=renderPagination(dashboardPage,fm.length,'setDashboardPage');
 }
 
 /* ══════════ PAYMENTS ══════════ */
@@ -625,44 +664,42 @@ function renderPayments(){
   const s=state.settings;
   const c=s.currency||'৳';
   const editable=isAdmin();
-  let h=`<div class="card">
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap">
-    <h2 style="font-size:15px;font-weight:500">Payments ${currentYear}</h2>
-    ${searchInputHtml()}
-  </div>`;
-  if(!editable) h+=`<div class="alert info" style="margin-bottom:1rem"><i class="ti ti-info-circle"></i> View only — <a href="#" onclick="showAdminLogin();return false">admin login</a> required to edit payments.</div>`;
+  document.getElementById('payments-card-title').textContent=`Payments ${currentYear}`;
+  const psw=document.getElementById('paymentsSearchWrap');
+  if(psw&&!psw.querySelector('input[data-search]'))psw.innerHTML=searchInputHtml();
+  document.getElementById('payments-alert').innerHTML=editable?'':
+    `<div class="alert info" style="margin-bottom:1rem"><i class="ti ti-info-circle"></i> View only — <a href="#" onclick="showAdminLogin();return false">admin login</a> required to edit payments.</div>`;
+  let thead=`<tr><th>#</th><th>Member</th>`;
+  SHORT.forEach(mn=>thead+=`<th style="min-width:${editable?'62':'45'}px">${mn}</th>`);
+  thead+=`<th>Total</th><th>Status</th></tr>`;
+  document.getElementById('paymentsThead').innerHTML=thead;
   const fm=filteredMembers();
   const pagedMembers=fm.slice(paymentsPage*PAGE_SIZE,(paymentsPage+1)*PAGE_SIZE);
-  h+=`<div class="overflow-x"><table>
-    <thead><tr><th>#</th><th>Member</th>`;
-  SHORT.forEach(mn=>h+=`<th style="min-width:${editable?'62':'45'}px">${mn}</th>`);
-  h+=`<th>Total</th><th>Status</th></tr></thead><tbody>`;
+  let tbody='';
   pagedMembers.forEach(m=>{
     const total=getMemberTotal(m.id,currentYear);
     const st=getStatus(m.id,currentYear);
-    h+=`<tr><td style="color:var(--text2)">${m.id}</td><td style="font-weight:500;white-space:nowrap">${m.name}</td>`;
+    tbody+=`<tr><td style="color:var(--text2)">${m.id}</td><td style="font-weight:500;white-space:nowrap">${m.name}</td>`;
     for(let mo=0;mo<12;mo++){
       const v=getPayment(m.id,currentYear,mo);
       if(editable){
-        h+=`<td><input class="cell-input" type="number" min="0" value="${v}"
+        tbody+=`<td><input class="cell-input" type="number" min="0" value="${v}"
           onchange="updatePayment(${m.id},${currentYear},${mo},this.value,this)" /></td>`;
       } else {
-        h+=`<td style="font-size:12px;color:var(--text2)">${v>0?c+v.toLocaleString():'—'}</td>`;
+        tbody+=`<td style="font-size:12px;color:var(--text2)">${v>0?c+v.toLocaleString():'—'}</td>`;
       }
     }
-    h+=`<td id="ptot-${m.id}" style="font-weight:500">${c}${total.toLocaleString()}</td>
-        <td id="pst-${m.id}">${badgeHtml(st)}</td></tr>`;
+    tbody+=`<td id="ptot-${m.id}" style="font-weight:500">${c}${total.toLocaleString()}</td>
+            <td id="pst-${m.id}">${badgeHtml(st)}</td></tr>`;
   });
-  h+=`<tr style="background:var(--bg2)"><td colspan="2" style="font-weight:500;font-size:12px">Monthly total</td>`;
+  tbody+=`<tr style="background:var(--bg2)"><td colspan="2" style="font-weight:500;font-size:12px">Monthly total</td>`;
   for(let mo=0;mo<12;mo++){
     const t=state.members.reduce((sum,m2)=>sum+getPayment(m2.id,currentYear,mo),0);
-    h+=`<td id="mcol-${mo}" style="font-weight:500;font-size:12px">${c}${t.toLocaleString()}</td>`;
+    tbody+=`<td id="mcol-${mo}" style="font-weight:500;font-size:12px">${c}${t.toLocaleString()}</td>`;
   }
-  h+=`<td id="grand-col" style="font-weight:500">${c}${getAllTotal(currentYear).toLocaleString()}</td><td></td></tr>`;
-  h+=`</tbody></table></div>`;
-  h+=renderPagination(paymentsPage,fm.length,'setPaymentsPage');
-  h+=`</div>`;
-  document.getElementById('page-payments').innerHTML=h;
+  tbody+=`<td id="grand-col" style="font-weight:500">${c}${getAllTotal(currentYear).toLocaleString()}</td><td></td></tr>`;
+  document.getElementById('paymentsTbody').innerHTML=tbody;
+  document.getElementById('paymentsPagination').innerHTML=renderPagination(paymentsPage,fm.length,'setPaymentsPage');
 }
 
 function updatePayment(mid,year,month,val,inputEl){
@@ -928,31 +965,23 @@ let editingNomineeId=null;
 function renderNominees(){
   const nominees=state.nominees;
   const editable=isAdmin();
-  let h=`<div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:.25rem;flex-wrap:wrap">
-      <div>
-        <h2 style="font-size:15px;font-weight:600">Member Nominees</h2>
-        <p style="font-size:12px;color:var(--text2);margin-top:3px">Emergency contacts — one nominee per member</p>
-      </div>
-      ${searchInputHtml()}
-    </div>`;
-  if(!editable) h+=`<div class="alert info" style="margin-top:1rem"><i class="ti ti-info-circle"></i> View only — <a href="#" onclick="showAdminLogin();return false">admin login</a> required to edit.</div>`;
+  const nsw=document.getElementById('nomineesSearchWrap');
+  if(nsw&&!nsw.querySelector('input[data-search]'))nsw.innerHTML=searchInputHtml();
+  document.getElementById('nominees-alert').innerHTML=editable?'':
+    `<div class="alert info" style="margin-top:1rem"><i class="ti ti-info-circle"></i> View only — <a href="#" onclick="showAdminLogin();return false">admin login</a> required to edit.</div>`;
+  document.getElementById('nomineesThead').innerHTML=`<tr>
+    <th style="width:36px">#</th><th>Member</th>
+    <th>Nominee name</th><th>Phone</th><th>Relation</th>
+    ${editable?'<th style="width:70px">Edit</th>':''}
+  </tr>`;
   const fm3=filteredMembers();
   const pagedNominees=fm3.slice(nomineesPage*PAGE_SIZE,(nomineesPage+1)*PAGE_SIZE);
-  h+=`<div class="overflow-x" style="margin-top:1rem"><table>
-    <thead><tr>
-      <th style="width:36px">#</th>
-      <th>Member</th>
-      <th>Nominee name</th>
-      <th>Phone</th>
-      <th>Relation</th>
-      ${editable?'<th style="width:70px">Edit</th>':''}
-    </tr></thead><tbody>`;
+  let tbody='';
   pagedNominees.forEach(m=>{
     const n=nominees[String(m.id)]||{};
     const isEmpty=!n.name&&!n.phone&&!n.relation;
     if(editingNomineeId===m.id){
-      h+=`<tr class="editing" id="nom-row-${m.id}">
+      tbody+=`<tr class="editing" id="nom-row-${m.id}">
         <td style="color:var(--text2)">${m.id}</td>
         <td style="font-weight:500">${m.name}</td>
         <td><input class="edit-input" id="nom-name-${m.id}" value="${(n.name||'').replace(/"/g,'&quot;')}" placeholder="Nominee name" style="min-width:140px"
@@ -967,7 +996,7 @@ function renderNominees(){
         </div></td>
       </tr>`;
     } else {
-      h+=`<tr>
+      tbody+=`<tr>
         <td style="color:var(--text2)">${m.id}</td>
         <td style="font-weight:500">${m.name}</td>
         <td>${n.name||`<span style="color:var(--text3)">—</span>`}</td>
@@ -977,10 +1006,8 @@ function renderNominees(){
       </tr>`;
     }
   });
-  h+=`</tbody></table></div>`;
-  h+=renderPagination(nomineesPage,fm3.length,'setNomineesPage');
-  h+=`</div>`;
-  document.getElementById('page-nominees').innerHTML=h;
+  document.getElementById('nomineesTbody').innerHTML=tbody;
+  document.getElementById('nomineesPagination').innerHTML=renderPagination(nomineesPage,fm3.length,'setNomineesPage');
   if(editingNomineeId!==null){
     requestAnimationFrame(()=>{
       const inp=document.getElementById('nom-name-'+editingNomineeId);
