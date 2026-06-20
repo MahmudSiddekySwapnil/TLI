@@ -249,6 +249,15 @@ tr.editing:hover td{background:var(--edit-bg)}
       <button class="tab admin-only" onclick="switchTab('settings',this)" style="display:none"><i class="ti ti-settings"></i> Settings</button>
     </div>
 
+    <div id="search-bar" style="padding:.4rem 0 0">
+      <div style="position:relative;max-width:300px">
+        <i class="ti ti-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:13px;pointer-events:none"></i>
+        <input type="text" id="memberSearch" placeholder="Search name or phone…"
+          style="width:100%;padding:7px 12px 7px 32px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:13px;box-sizing:border-box"
+          oninput="onSearch(this.value)" />
+      </div>
+    </div>
+
     <div id="page-dashboard" class="page active"></div>
     <div id="page-payments" class="page"></div>
     <div id="page-nominees" class="page"></div>
@@ -329,6 +338,19 @@ let state={members:[],payments:{},settings:{openingBalance:5000,monthlyTarget:30
 let currentTab='dashboard';
 const PAGE_SIZE=10;
 let membersPage=0,nomineesPage=0,paymentsPage=0,dashboardPage=0;
+let searchQuery='';
+
+function filteredMembers(){
+  if(!searchQuery)return state.members;
+  const q=searchQuery.toLowerCase();
+  return state.members.filter(m=>m.name.toLowerCase().includes(q)||(m.phone||'').includes(q));
+}
+
+function onSearch(val){
+  searchQuery=val.trim();
+  membersPage=0;nomineesPage=0;paymentsPage=0;dashboardPage=0;
+  render();
+}
 let currentYear=new Date().getFullYear();
 let editingMemberId=null;
 let adminPassword=null; // null = viewer, string = admin
@@ -506,6 +528,10 @@ function switchTab(tab,el){
   if(currentTab==='nominees') editingNomineeId=null;
   currentTab=tab;
   membersPage=0;nomineesPage=0;paymentsPage=0;dashboardPage=0;
+  searchQuery='';
+  const sb=document.getElementById('memberSearch');if(sb)sb.value='';
+  const sbar=document.getElementById('search-bar');
+  if(sbar)sbar.style.display=(tab==='settings')?'none':'block';
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -538,17 +564,18 @@ function renderDashboard(){
   const grand=Number(s.openingBalance||0)+total;
   const now=new Date();
   const mo=(currentYear===now.getFullYear())?now.getMonth():11;
-  const paid=state.members.filter(m=>getStatus(m.id,currentYear)==='paid').length;
-  const unpaid=state.members.filter(m=>getStatus(m.id,currentYear)==='unpaid').length;
-  const partial=state.members.filter(m=>getStatus(m.id,currentYear)==='partial').length;
-  const moCol=state.members.reduce((sum,m)=>sum+getPayment(m.id,currentYear,mo),0);
+  const fm=filteredMembers();
+  const paid=fm.filter(m=>getStatus(m.id,currentYear)==='paid').length;
+  const unpaid=fm.filter(m=>getStatus(m.id,currentYear)==='unpaid').length;
+  const partial=fm.filter(m=>getStatus(m.id,currentYear)==='partial').length;
+  const moCol=fm.reduce((sum,m)=>sum+getPayment(m.id,currentYear,mo),0);
 
   document.getElementById('page-dashboard').innerHTML=`
   <div class="metrics">
     <div class="metric"><div class="metric-label">Prior savings</div><div class="metric-value">${c}${Number(s.openingBalance||0).toLocaleString()}</div></div>
     <div class="metric"><div class="metric-label">Collected ${currentYear}</div><div class="metric-value green">${c}${total.toLocaleString()}</div></div>
     <div class="metric"><div class="metric-label">Grand total</div><div class="metric-value">${c}${grand.toLocaleString()}</div></div>
-    <div class="metric"><div class="metric-label">Total members</div><div class="metric-value">${state.members.length}</div></div>
+    <div class="metric"><div class="metric-label">Total members</div><div class="metric-value">${searchQuery?fm.length+' / '+state.members.length:state.members.length}</div></div>
   </div>
   <div style="font-size:12px;color:var(--text2);margin:-4px 0 14px;padding:0 2px">
     Grand total = prior savings (${c}${Number(s.openingBalance||0).toLocaleString()}) + collected this year (${c}${total.toLocaleString()})
@@ -563,7 +590,7 @@ function renderDashboard(){
     <h2 style="font-size:15px;font-weight:500;margin-bottom:1rem">${MONTHS[mo]} ${currentYear} — payment status</h2>
     <div class="overflow-x"><table>
       <thead><tr><th>#</th><th>Member name</th><th>Phone</th><th>${MONTHS[mo]}</th><th>Status</th><th>${currentYear} total</th></tr></thead>
-      <tbody>${state.members.slice(dashboardPage*PAGE_SIZE,(dashboardPage+1)*PAGE_SIZE).map(m=>{
+      <tbody>${filteredMembers().slice(dashboardPage*PAGE_SIZE,(dashboardPage+1)*PAGE_SIZE).map(m=>{
         const val=getPayment(m.id,currentYear,mo);
         const st=getStatus(m.id,currentYear);
         return `<tr>
@@ -576,7 +603,7 @@ function renderDashboard(){
         </tr>`;
       }).join('')}</tbody>
     </table></div>
-    ${renderPagination(dashboardPage,state.members.length,'setDashboardPage')}
+    ${renderPagination(dashboardPage,filteredMembers().length,'setDashboardPage')}
   </div>`;
 }
 
@@ -587,7 +614,8 @@ function renderPayments(){
   const editable=isAdmin();
   let h=`<div class="card">`;
   if(!editable) h+=`<div class="alert info" style="margin-bottom:1rem"><i class="ti ti-info-circle"></i> View only — <a href="#" onclick="showAdminLogin();return false">admin login</a> required to edit payments.</div>`;
-  const pagedMembers=state.members.slice(paymentsPage*PAGE_SIZE,(paymentsPage+1)*PAGE_SIZE);
+  const fm=filteredMembers();
+  const pagedMembers=fm.slice(paymentsPage*PAGE_SIZE,(paymentsPage+1)*PAGE_SIZE);
   h+=`<div class="overflow-x"><table>
     <thead><tr><th>#</th><th>Member</th>`;
   SHORT.forEach(mn=>h+=`<th style="min-width:${editable?'62':'45'}px">${mn}</th>`);
@@ -615,7 +643,7 @@ function renderPayments(){
   }
   h+=`<td id="grand-col" style="font-weight:500">${c}${getAllTotal(currentYear).toLocaleString()}</td><td></td></tr>`;
   h+=`</tbody></table></div>`;
-  h+=renderPagination(paymentsPage,state.members.length,'setPaymentsPage');
+  h+=renderPagination(paymentsPage,fm.length,'setPaymentsPage');
   h+=`</div>`;
   document.getElementById('page-payments').innerHTML=h;
 }
@@ -698,7 +726,8 @@ function renderMemberRows(){
   document.getElementById('memberYearLabel').textContent=currentYear;
   const tbody=document.getElementById('membersTbody');
   tbody.innerHTML='';
-  const pagedMembers=state.members.slice(membersPage*PAGE_SIZE,(membersPage+1)*PAGE_SIZE);
+  const fm2=filteredMembers();
+  const pagedMembers=fm2.slice(membersPage*PAGE_SIZE,(membersPage+1)*PAGE_SIZE);
   pagedMembers.forEach(m=>{
     const total=getMemberTotal(m.id,currentYear);
     const isEditing=(editingMemberId===m.id);
@@ -730,7 +759,7 @@ function renderMemberRows(){
     tbody.appendChild(tr);
   });
   const pgEl=document.getElementById('membersPagination');
-  if(pgEl)pgEl.innerHTML=renderPagination(membersPage,state.members.length,'setMembersPage');
+  if(pgEl)pgEl.innerHTML=renderPagination(membersPage,fm2.length,'setMembersPage');
   if(editingMemberId!==null){
     requestAnimationFrame(()=>{
       const inp=document.getElementById('edit-name-'+editingMemberId);
@@ -888,7 +917,8 @@ function renderNominees(){
       </div>
     </div>`;
   if(!editable) h+=`<div class="alert info" style="margin-top:1rem"><i class="ti ti-info-circle"></i> View only — <a href="#" onclick="showAdminLogin();return false">admin login</a> required to edit.</div>`;
-  const pagedNominees=state.members.slice(nomineesPage*PAGE_SIZE,(nomineesPage+1)*PAGE_SIZE);
+  const fm3=filteredMembers();
+  const pagedNominees=fm3.slice(nomineesPage*PAGE_SIZE,(nomineesPage+1)*PAGE_SIZE);
   h+=`<div class="overflow-x" style="margin-top:1rem"><table>
     <thead><tr>
       <th style="width:36px">#</th>
@@ -928,7 +958,7 @@ function renderNominees(){
     }
   });
   h+=`</tbody></table></div>`;
-  h+=renderPagination(nomineesPage,state.members.length,'setNomineesPage');
+  h+=renderPagination(nomineesPage,fm3.length,'setNomineesPage');
   h+=`</div>`;
   document.getElementById('page-nominees').innerHTML=h;
   if(editingNomineeId!==null){
