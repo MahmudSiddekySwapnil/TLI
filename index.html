@@ -339,21 +339,26 @@ let membersPage=0,nomineesPage=0,paymentsPage=0,dashboardPage=0;
 let searchQuery='';
 
 function filteredMembers(){
-  if(!searchQuery)return state.members;
-  const q=searchQuery.toLowerCase();
+  const q=searchQuery.trim().toLowerCase();
+  if(!q)return state.members;
   return state.members.filter(m=>m.name.toLowerCase().includes(q)||(m.phone||'').includes(q));
 }
 
 function onSearch(val){
-  searchQuery=val.trim();
+  searchQuery=val;  // keep raw (trim only when filtering)
   membersPage=0;nomineesPage=0;paymentsPage=0;dashboardPage=0;
   render();
+  // restore focus and cursor after DOM rebuild
+  requestAnimationFrame(()=>{
+    const inp=document.querySelector('input[data-search]');
+    if(inp){inp.focus();const l=val.length;try{inp.setSelectionRange(l,l);}catch(e){}}
+  });
 }
 
 function searchInputHtml(){
   return `<div style="position:relative;flex-shrink:0;min-width:0">
     <i class="ti ti-search" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:12px;pointer-events:none"></i>
-    <input type="text" value="${searchQuery.replace(/"/g,'&quot;')}" placeholder="Search name or phone…"
+    <input type="text" data-search value="${searchQuery.replace(/"/g,'&quot;')}" placeholder="Search name or phone…"
       style="padding:5px 10px 5px 26px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-size:12px;width:min(190px,100%);display:block"
       oninput="onSearch(this.value)" />
   </div>`;
@@ -737,7 +742,7 @@ function renderMemberRows(){
   const c=state.settings.currency||'৳';
   document.getElementById('memberYearLabel').textContent=currentYear;
   const swrap=document.getElementById('memberSearchWrap');
-  if(swrap)swrap.innerHTML=searchInputHtml();
+  if(swrap&&!swrap.querySelector('input[data-search]'))swrap.innerHTML=searchInputHtml();
   const tbody=document.getElementById('membersTbody');
   tbody.innerHTML='';
   const fm2=filteredMembers();
