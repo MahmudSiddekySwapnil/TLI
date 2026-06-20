@@ -237,12 +237,14 @@ tr.editing:hover td{background:var(--edit-bg)}
     <div class="tabs">
       <button class="tab active" onclick="switchTab('dashboard',this)"><i class="ti ti-layout-dashboard"></i> Dashboard</button>
       <button class="tab" onclick="switchTab('payments',this)"><i class="ti ti-cash"></i> Payments</button>
+      <button class="tab" onclick="switchTab('nominees',this)"><i class="ti ti-user-heart"></i> Nominees</button>
       <button class="tab admin-only" onclick="switchTab('members',this)" style="display:none"><i class="ti ti-users"></i> Members</button>
       <button class="tab admin-only" onclick="switchTab('settings',this)" style="display:none"><i class="ti ti-settings"></i> Settings</button>
     </div>
 
     <div id="page-dashboard" class="page active"></div>
     <div id="page-payments" class="page"></div>
+    <div id="page-nominees" class="page"></div>
 
     <!-- Members tab static shell -->
     <div id="page-members" class="page">
@@ -315,7 +317,7 @@ const STORAGE_YEARS_KEY='samity_years';
 const DEFAULT_API_URL='https://script.google.com/macros/s/AKfycbwOoWyD_VXoCA7PJ64ysaYEYr_-maCDE843S6Yq-9k-vdb5IdrPmOnyDy_9Yoya0h8rlA/exec';
 
 /* ── in-memory state ── */
-let state={members:[],payments:{},settings:{openingBalance:5000,monthlyTarget:3000,currency:'৳'}};
+let state={members:[],payments:{},settings:{openingBalance:5000,monthlyTarget:3000,currency:'৳'},nominees:{}};
 let currentTab='dashboard';
 let currentYear=new Date().getFullYear();
 let editingMemberId=null;
@@ -446,6 +448,7 @@ function initApp(d){
   state.members=d.members||[];
   state.payments=d.payments||{};
   state.settings=d.settings||{openingBalance:5000,monthlyTarget:3000,currency:'৳'};
+  state.nominees=d.nominees||{};
   // ensure current year is in list
   const years=getYears();
   if(!years.includes(currentYear)){years.push(currentYear);saveYears(years);}
@@ -489,6 +492,7 @@ function switchTab(tab,el){
     document.getElementById('addMemberForm').style.display='none';
     editingMemberId=null;
   }
+  if(currentTab==='nominees') editingNomineeId=null;
   currentTab=tab;
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
@@ -830,6 +834,101 @@ function exportCSV(){
   a.click();
 }
 
+/* ══════════ NOMINEES ══════════ */
+let editingNomineeId=null;
+
+function renderNominees(){
+  const nominees=state.nominees;
+  const editable=isAdmin();
+  let h=`<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.25rem">
+      <div>
+        <h2 style="font-size:15px;font-weight:600">Member Nominees</h2>
+        <p style="font-size:12px;color:var(--text2);margin-top:3px">Emergency contacts — one nominee per member</p>
+      </div>
+    </div>`;
+  if(!editable) h+=`<div class="alert info" style="margin-top:1rem"><i class="ti ti-info-circle"></i> View only — <a href="#" onclick="showAdminLogin();return false">admin login</a> required to edit.</div>`;
+  h+=`<div class="overflow-x" style="margin-top:1rem"><table>
+    <thead><tr>
+      <th style="width:36px">#</th>
+      <th>Member</th>
+      <th>Nominee name</th>
+      <th>Phone</th>
+      <th>Relation</th>
+      ${editable?'<th style="width:70px">Edit</th>':''}
+    </tr></thead><tbody>`;
+  state.members.forEach(m=>{
+    const n=nominees[String(m.id)]||{};
+    const isEmpty=!n.name&&!n.phone&&!n.relation;
+    if(editingNomineeId===m.id){
+      h+=`<tr class="editing" id="nom-row-${m.id}">
+        <td style="color:var(--text2)">${m.id}</td>
+        <td style="font-weight:500">${m.name}</td>
+        <td><input class="edit-input" id="nom-name-${m.id}" value="${(n.name||'').replace(/"/g,'&quot;')}" placeholder="Nominee name" style="min-width:140px"
+          onkeydown="if(event.key==='Enter')saveNomineeEdit(${m.id});if(event.key==='Escape')cancelNomineeEdit()" /></td>
+        <td><input class="edit-input" id="nom-phone-${m.id}" value="${n.phone||''}" placeholder="017XXXXXXXX" style="min-width:120px"
+          onkeydown="if(event.key==='Enter')saveNomineeEdit(${m.id});if(event.key==='Escape')cancelNomineeEdit()" /></td>
+        <td><input class="edit-input" id="nom-rel-${m.id}" value="${n.relation||''}" placeholder="e.g. Wife, Brother" style="min-width:120px"
+          onkeydown="if(event.key==='Enter')saveNomineeEdit(${m.id});if(event.key==='Escape')cancelNomineeEdit()" /></td>
+        <td><div class="row-actions">
+          <button class="btn btn-primary btn-sm" id="nom-save-${m.id}" onclick="saveNomineeEdit(${m.id})"><i class="ti ti-check"></i></button>
+          <button class="btn btn-sm" onclick="cancelNomineeEdit()"><i class="ti ti-x"></i></button>
+        </div></td>
+      </tr>`;
+    } else {
+      h+=`<tr>
+        <td style="color:var(--text2)">${m.id}</td>
+        <td style="font-weight:500">${m.name}</td>
+        <td>${n.name||`<span style="color:var(--text3)">—</span>`}</td>
+        <td style="color:var(--text2)">${n.phone||`<span style="color:var(--text3)">—</span>`}</td>
+        <td style="color:var(--text2)">${n.relation||`<span style="color:var(--text3)">—</span>`}</td>
+        ${editable?`<td><button class="btn btn-sm" onclick="startNomineeEdit(${m.id})" ${isEmpty?'style="opacity:.55"':''}><i class="ti ti-edit"></i></button></td>`:''}
+      </tr>`;
+    }
+  });
+  h+=`</tbody></table></div></div>`;
+  document.getElementById('page-nominees').innerHTML=h;
+  if(editingNomineeId!==null){
+    requestAnimationFrame(()=>{
+      const inp=document.getElementById('nom-name-'+editingNomineeId);
+      if(inp){inp.focus();inp.select();}
+    });
+  }
+}
+
+function startNomineeEdit(id){
+  if(!isAdmin()){showAdminLogin();return;}
+  editingNomineeId=id;
+  renderNominees();
+}
+
+function cancelNomineeEdit(){editingNomineeId=null;renderNominees();}
+
+function saveNomineeEdit(id){
+  const name=(document.getElementById('nom-name-'+id)||{}).value||'';
+  const phone=(document.getElementById('nom-phone-'+id)||{}).value||'';
+  const relation=(document.getElementById('nom-rel-'+id)||{}).value||'';
+  const btn=document.getElementById('nom-save-'+id);
+  if(btn){btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';}
+  api({action:'saveNominee',password:adminPassword,memberId:id,
+       name:name.trim(),phone:phone.trim(),relation:relation.trim()})
+    .then(d=>{
+      if(d.ok){
+        state.nominees[String(id)]={name:name.trim(),phone:phone.trim(),relation:relation.trim()};
+        editingNomineeId=null;
+        flashSaved();
+        renderNominees();
+      } else {
+        alert('Save failed: '+(d.error||'error'));
+        if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i>';}
+      }
+    })
+    .catch(()=>{
+      alert('Network error.');
+      if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i>';}
+    });
+}
+
 /* ══════════ YEAR SELECT ══════════ */
 function populateYearSelect(){
   const sel=document.getElementById('yearSel');
@@ -844,6 +943,7 @@ function render(){
   populateYearSelect();
   if(currentTab==='dashboard') renderDashboard();
   else if(currentTab==='payments') renderPayments();
+  else if(currentTab==='nominees') renderNominees();
   else if(currentTab==='members') renderMemberRows();
   else if(currentTab==='settings') renderSettings();
 }
