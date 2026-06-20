@@ -2,7 +2,10 @@
 // Trust Land Initiative — Samity Manager Backend
 // ================================================================
 
-const ADMIN_PASSWORD = "samity2024"; // CHANGE THIS to your own password!
+// SHA-256 hash of the admin password — never store the plaintext here.
+// To change password: run hashPw("yournewpassword") in the Apps Script console,
+// copy the result, and replace the string below.
+const ADMIN_PASSWORD_HASH = "bfb35a38abc92182f6e3102d5683c967cb95c998b60991af164af9cb52eb3b43"; // samity2024
 const SHEET_ID = "1UvoVp3zPOlHD_Ht8Ce0SOj92FH-YocImm4IK8a4LYHM";
 
 function doGet(e)  { return handle(e); }
@@ -19,7 +22,7 @@ function handle(e) {
     else if (p.action === "deleteMember")  out = needsAuth(p, () => actionDeleteMember(p));
     else if (p.action === "saveSettings")  out = needsAuth(p, () => actionSaveSettings(p));
     else if (p.action === "saveNominee")   out = needsAuth(p, () => actionSaveNominee(p));
-    else if (p.action === "checkPassword") out = { ok: p.password === ADMIN_PASSWORD };
+    else if (p.action === "checkPassword") out = { ok: checkAuth(p) };
     else out = { ok: false, error: "Unknown action" };
   } catch(err) {
     out = { ok: false, error: err.toString() };
@@ -29,8 +32,17 @@ function handle(e) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+function hashPw(pw) {
+  const bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, pw, Utilities.Charset.UTF_8);
+  return bytes.map(b => ('0' + (b & 0xFF).toString(16)).slice(-2)).join('');
+}
+
+function checkAuth(p) {
+  return hashPw(p.password || "") === ADMIN_PASSWORD_HASH;
+}
+
 function needsAuth(p, fn) {
-  if (p.password !== ADMIN_PASSWORD) return { ok: false, error: "Wrong password" };
+  if (!checkAuth(p)) return { ok: false, error: "Wrong password" };
   return fn();
 }
 
