@@ -397,6 +397,7 @@ function filteredMembers(){
 function onSearch(val){
   searchQuery=val;
   membersPage=0;nomineesPage=0;paymentsPage=0;dashboardPage=0;
+  editingMemberId=null;editingNomineeId=null;
   render();
 }
 
@@ -630,13 +631,16 @@ function renderPagination(page,total,setter){
   h+=`</div>`;
   return h;
 }
-function setDashboardPage(p){dashboardPage=p;renderDashboard();}
-function setPaymentsPage(p){paymentsPage=p;renderPayments();}
-function setMembersPage(p){membersPage=p;renderMemberRows();}
-function setNomineesPage(p){nomineesPage=p;renderNominees();}
+function clampPage(p,total){return Math.max(0,Math.min(p,Math.max(0,Math.ceil(total/PAGE_SIZE)-1)));}
+function setDashboardPage(p){dashboardPage=clampPage(p,filteredMembers().length);renderDashboard();}
+function setPaymentsPage(p){paymentsPage=clampPage(p,filteredMembers().length);renderPayments();}
+function setMembersPage(p){membersPage=clampPage(p,filteredMembers().length);renderMemberRows();}
+function setNomineesPage(p){nomineesPage=clampPage(p,filteredMembers().length);renderNominees();}
 
 /* ══════════ DASHBOARD ══════════ */
 function renderDashboard(){
+  const card=document.querySelector('#page-dashboard .card');
+  if(card&&state.members.length)card.style.display='';
   const s=state.settings;
   const c=s.currency||'৳';
   const total=getAllTotal(currentYear);
@@ -713,7 +717,8 @@ function renderPayments(){
     tbody+=`<td id="ptot-${m.id}" style="font-weight:500">${c}${total.toLocaleString()}</td>
             <td id="pst-${m.id}">${badgeHtml(st)}</td></tr>`;
   });
-  tbody+=`<tr style="background:var(--bg2)"><td colspan="2" style="font-weight:500;font-size:12px">Monthly total</td>`;
+  const footerLabel=searchQuery.trim()?`Monthly total <span style="font-weight:400;opacity:.6">(all members)</span>`:'Monthly total';
+  tbody+=`<tr style="background:var(--bg2)"><td colspan="2" style="font-weight:500;font-size:12px">${footerLabel}</td>`;
   for(let mo=0;mo<12;mo++){
     const t=state.members.reduce((sum,m2)=>sum+getPayment(m2.id,currentYear,mo),0);
     tbody+=`<td id="mcol-${mo}" style="font-weight:500;font-size:12px">${c}${t.toLocaleString()}</td>`;
@@ -846,7 +851,7 @@ function renderMemberRows(){
 }
 
 function startMemberEdit(id){
-  const idx=state.members.findIndex(m=>m.id===id);
+  const idx=filteredMembers().findIndex(m=>m.id===id);
   if(idx>-1)membersPage=Math.floor(idx/PAGE_SIZE);
   editingMemberId=id;renderMemberRows();
 }
@@ -1039,7 +1044,7 @@ function renderNominees(){
 
 function startNomineeEdit(id){
   if(!isAdmin()){showAdminLogin();return;}
-  const idx=state.members.findIndex(m=>m.id===id);
+  const idx=filteredMembers().findIndex(m=>m.id===id);
   if(idx>-1)nomineesPage=Math.floor(idx/PAGE_SIZE);
   editingNomineeId=id;
   renderNominees();

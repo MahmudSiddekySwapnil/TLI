@@ -45,7 +45,7 @@ All requests go to the deployed Apps Script URL as GET parameters (`?action=...`
 | `saveSettings` | Admin | Update opening balance, monthly target, or currency |
 | `checkPassword` | — | Validates the admin password |
 
-Authentication is a shared plaintext password (`ADMIN_PASSWORD` in the script). Wrong password returns `{ ok: false, error: "Wrong password" }`.
+Authentication is a shared password verified against a SHA-256 hash (`ADMIN_PASSWORD_HASH` in the script). Wrong password returns `{ ok: false, error: "Wrong password" }`.
 
 ---
 
