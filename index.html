@@ -394,11 +394,13 @@ function filteredMembers(){
   return state.members.filter(m=>m.name.toLowerCase().includes(q)||(m.phone||'').includes(q));
 }
 
+let _searchTimer;
 function onSearch(val){
   searchQuery=val;
   membersPage=0;nomineesPage=0;paymentsPage=0;dashboardPage=0;
   editingMemberId=null;editingNomineeId=null;
-  render();
+  clearTimeout(_searchTimer);
+  _searchTimer=setTimeout(render,250);
 }
 
 function searchInputHtml(){
