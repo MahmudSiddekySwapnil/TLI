@@ -1,6 +1,6 @@
 # Trust Land Initiative — Samity Manager
 
-A lightweight web app to manage a savings group (samity) — track members, monthly payments, nominees, and fund balance. All data lives in a Google Sheet; the frontend is a single HTML file hosted on GitHub Pages.
+A lightweight, mobile-first web app to manage a savings group (samity) — track members, monthly payments, nominees, and fund balance. All data lives in a Google Sheet; the frontend is a single HTML file hosted on GitHub Pages.
 
 ---
 
@@ -72,6 +72,28 @@ Authentication is a shared password verified against a SHA-256 hash (`ADMIN_PASS
 
 - Current month breakdown: how many members paid / partial / unpaid, and total collected that month
 
+### Search & Filtering
+
+Available on every tab (Dashboard, Payments, Nominees, Members):
+
+- Filters by **member name** or **phone number** simultaneously
+- Input is debounced (250ms) — renders only after the user pauses typing, keeping mobile keyboards stable
+- Resets to page 1 on every new search
+- `autocomplete`, `autocorrect`, and `autocapitalize` are disabled to prevent mobile keyboard interference
+- Font size forced to 16px to prevent iOS Safari from auto-zooming the viewport
+
+### Pagination
+
+- 10 members per page (configurable via `PAGE_SIZE` in the script)
+- **Smart pagination** — shows at most 7 buttons with `…` ellipsis; never overflows on narrow screens:
+  ```
+  Near start:  < [1][2][3][4][5]…[12] >
+  Middle:      < [1]…[4][5][6]…[12] >
+  Near end:    < [1]…[8][9][10][11][12] >
+  ```
+- Previous / next arrow buttons are disabled at the boundaries
+- Pagination resets to page 1 when the year changes or a search is applied
+
 ### Payments Tab
 
 - One row per member, one column per month (Jan–Dec)
@@ -106,6 +128,22 @@ Authentication is a shared password verified against a SHA-256 hash (`ADMIN_PASS
 - Password is checked against the backend (`checkPassword` action)
 - Admin session is stored in `localStorage` so you stay logged in after refresh
 - Logout button clears the session
+
+---
+
+## Mobile UX
+
+The app is designed to work cleanly on phones:
+
+| Area | Behaviour |
+|---|---|
+| Search input | 16px font prevents iOS auto-zoom; `onchange` fallback catches paste / autocomplete |
+| Pagination buttons | 44px touch target on mobile (Apple HIG minimum); `touch-action: manipulation` removes 300ms tap delay |
+| Tab bar | `touch-action: manipulation` on every tab button |
+| Search wrap | Stretches to full card width on small screens |
+| Metrics grid | 2-column grid on mobile (4-column on desktop) |
+| Header buttons | Labels hidden on mobile — icon-only to save space |
+| Dark mode | Automatic via `prefers-color-scheme` |
 
 ---
 
@@ -194,3 +232,17 @@ TLI/
 - **Nominees are per-device for old users** — before the Google Sheets integration, nominees were stored in `localStorage`. After the backend update, they sync across all devices.
 - **Single sheet, single samity** — the Sheet ID is hardcoded; one deployment = one samity.
 - **No offline support** — all reads and writes require an internet connection to Google Sheets.
+- **Search is client-side** — all members are loaded into memory on page load; the search filters that local copy. Works fine up to a few hundred members.
+
+---
+
+## Changelog
+
+### Latest
+- **Smart pagination with ellipsis** — replaces the flat button list; max 7 page buttons shown at once
+- **44px touch targets** on pagination buttons and tabs (mobile)
+- **`touch-action: manipulation`** on all interactive controls — removes 300ms tap delay on mobile browsers
+- **Search debounce** (250ms) — smoother typing on mobile; no per-keystroke DOM thrash
+- **iOS zoom fix** — search input forced to 16px font size to prevent Safari viewport zoom on focus
+- **Full-width search** on mobile — input stretches across the card when the layout wraps
+- **`onchange` fallback** on search — catches value changes from paste and autocomplete that skip `oninput`
