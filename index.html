@@ -408,13 +408,29 @@ function onSearch(val){
 }
 
 function searchInputHtml(){
-  return `<div style="position:relative;flex-shrink:0;min-width:0">
+  return `<div style="position:relative;width:100%;min-width:0">
     <i class="ti ti-search" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:12px;pointer-events:none"></i>
     <input type="text" data-search value="${searchQuery.replace(/"/g,'&quot;')}" placeholder="Search name or phone…"
       autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-      style="padding:5px 10px 5px 26px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-size:16px;width:min(210px,100%);display:block"
-      oninput="onSearch(this.value)" onchange="onSearch(this.value)" />
+      style="padding:5px 10px 5px 26px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-size:16px;width:100%;display:block" />
   </div>`;
+}
+
+function ensureSearch(wrapId){
+  const dsw=document.getElementById(wrapId);
+  if(!dsw)return;
+  let inp=dsw.querySelector('input[data-search]');
+  if(!inp){
+    dsw.innerHTML=searchInputHtml();
+    inp=dsw.querySelector('input[data-search]');
+    if(inp){
+      // Use JS addEventListener instead of inline handlers —
+      // covers Android IME composition, swipe input, and paste on all mobile browsers
+      ['input','keyup','compositionend','change'].forEach(ev=>
+        inp.addEventListener(ev,()=>{ if(inp.value!==searchQuery||ev==='change') onSearch(inp.value); })
+      );
+    }
+  }
 }
 let currentYear=new Date().getFullYear();
 let editingMemberId=null;
@@ -686,8 +702,7 @@ function renderDashboard(){
     <div class="metric"><div class="metric-label">${SHORT[mo]} unpaid</div><div class="metric-value red">${unpaid}</div></div>
     <div class="metric"><div class="metric-label">${SHORT[mo]} collected</div><div class="metric-value">${c}${moCol.toLocaleString()}</div></div>`;
   document.getElementById('dash-card-title').textContent=`${MONTHS[mo]} ${currentYear} — payment status`;
-  const dsw=document.getElementById('dashSearchWrap');
-  if(dsw&&!dsw.querySelector('input[data-search]'))dsw.innerHTML=searchInputHtml();
+  ensureSearch('dashSearchWrap');
   document.getElementById('dashThead').innerHTML=`<th>#</th><th>Member name</th><th>Phone</th><th>${MONTHS[mo]}</th><th>Status</th><th>${currentYear} total</th>`;
   document.getElementById('dashTbody').innerHTML=fm.slice(dashboardPage*PAGE_SIZE,(dashboardPage+1)*PAGE_SIZE).map(m=>{
     const val=getPayment(m.id,currentYear,mo);
@@ -710,8 +725,7 @@ function renderPayments(){
   const c=s.currency||'৳';
   const editable=isAdmin();
   document.getElementById('payments-card-title').textContent=`Payments ${currentYear}`;
-  const psw=document.getElementById('paymentsSearchWrap');
-  if(psw&&!psw.querySelector('input[data-search]'))psw.innerHTML=searchInputHtml();
+  ensureSearch('paymentsSearchWrap');
   document.getElementById('payments-alert').innerHTML=editable?'':
     `<div class="alert info" style="margin-bottom:1rem"><i class="ti ti-info-circle"></i> View only — <a href="#" onclick="showAdminLogin();return false">admin login</a> required to edit payments.</div>`;
   let thead=`<tr><th>#</th><th>Member</th>`;
@@ -824,8 +838,7 @@ function addMember(){
 function renderMemberRows(){
   const c=state.settings.currency||'৳';
   document.getElementById('memberYearLabel').textContent=currentYear;
-  const swrap=document.getElementById('memberSearchWrap');
-  if(swrap&&!swrap.querySelector('input[data-search]'))swrap.innerHTML=searchInputHtml();
+  ensureSearch('memberSearchWrap');
   const tbody=document.getElementById('membersTbody');
   tbody.innerHTML='';
   const fm2=filteredMembers();
@@ -1011,8 +1024,7 @@ let editingNomineeId=null;
 function renderNominees(){
   const nominees=state.nominees;
   const editable=isAdmin();
-  const nsw=document.getElementById('nomineesSearchWrap');
-  if(nsw&&!nsw.querySelector('input[data-search]'))nsw.innerHTML=searchInputHtml();
+  ensureSearch('nomineesSearchWrap');
   document.getElementById('nominees-alert').innerHTML=editable?'':
     `<div class="alert info" style="margin-top:1rem"><i class="ti ti-info-circle"></i> View only — <a href="#" onclick="showAdminLogin();return false">admin login</a> required to edit.</div>`;
   document.getElementById('nomineesThead').innerHTML=`<tr>
