@@ -72,7 +72,7 @@ select:focus,input:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 3px 
 
 /* ── Tabs ── */
 .tabs{display:flex;gap:2px;margin-bottom:1.5rem;background:var(--bg);border-radius:var(--radius-lg);padding:5px;border:1px solid var(--border);box-shadow:var(--shadow-sm);flex-wrap:wrap}
-.tab{padding:6px 16px;cursor:pointer;border:none;background:none;font-size:13px;font-weight:500;color:var(--text2);border-radius:calc(var(--radius-lg) - 5px);transition:all .12s}
+.tab{padding:6px 16px;cursor:pointer;border:none;background:none;font-size:13px;font-weight:500;color:var(--text2);border-radius:calc(var(--radius-lg) - 5px);transition:all .12s;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .tab:hover{background:var(--bg2);color:var(--text)}
 .tab.active{background:var(--text);color:var(--bg);box-shadow:0 1px 3px rgba(0,0,0,.15)}
 
@@ -144,11 +144,12 @@ tr.editing:hover td{background:var(--edit-bg)}
 .admin-badge{font-size:11px;background:var(--yellow-bg);color:var(--yellow-text);padding:2px 8px;border-radius:99px;margin-left:6px;font-weight:600}
 
 /* ── Pagination ── */
-.pagination{display:flex;gap:4px;justify-content:center;padding:1rem 0 .25rem;flex-wrap:wrap}
-.pg-btn{min-width:32px;height:32px;border:0.5px solid var(--border2);background:var(--bg);color:var(--text);border-radius:var(--radius-sm);cursor:pointer;font-size:13px;padding:0 8px;transition:background .15s,border-color .15s;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.pagination{display:flex;gap:4px;justify-content:center;padding:1rem 0 .25rem;flex-wrap:wrap;align-items:center}
+.pg-btn{min-width:36px;height:36px;border:0.5px solid var(--border2);background:var(--bg);color:var(--text);border-radius:var(--radius-sm);cursor:pointer;font-size:13px;padding:0 8px;transition:background .15s,border-color .15s;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .pg-btn:hover:not(:disabled){background:var(--bg2)}
 .pg-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 .pg-btn:disabled{opacity:.35;cursor:default}
+.pg-ellipsis{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:36px;color:var(--text2);font-size:14px;user-select:none;letter-spacing:.05em}
 
 /* ── Mobile ── */
 @media(max-width:600px){
@@ -158,13 +159,16 @@ tr.editing:hover td{background:var(--edit-bg)}
   .hdr-right{gap:4px}
   .btn-label{display:none}
   .tabs{padding:3px;gap:2px}
-  .tab{padding:5px 8px;font-size:11px}
+  .tab{padding:6px 10px;font-size:12px}
   .form-grid{grid-template-columns:1fr}
   .setup-card{margin:.5rem auto}
   .metrics{grid-template-columns:repeat(2,1fr)}
   .card{padding:.9rem}
   .pagination{gap:3px}
-  .pg-btn{min-width:28px;height:28px;font-size:12px;padding:0 6px}
+  .pg-btn{min-width:40px;height:44px;font-size:14px;padding:0 8px}
+  .pg-ellipsis{height:44px;min-width:20px}
+  #dashSearchWrap,#paymentsSearchWrap,#nomineesSearchWrap,#memberSearchWrap{width:100%}
+  input[data-search]{width:100%!important;max-width:100%!important;font-size:16px!important}
 }
 </style>
 </head>
@@ -260,9 +264,9 @@ tr.editing:hover td{background:var(--edit-bg)}
       <div id="dash-formula-note" style="font-size:12px;color:var(--text2);margin:-4px 0 14px;padding:0 2px"></div>
       <div id="dash-metrics-mid" class="metrics"></div>
       <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap">
-          <h2 id="dash-card-title" style="font-size:15px;font-weight:500"></h2>
-          <div id="dashSearchWrap"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap">
+          <h2 id="dash-card-title" style="font-size:15px;font-weight:500;flex-shrink:0"></h2>
+          <div id="dashSearchWrap" style="flex:1;min-width:140px"></div>
         </div>
         <div class="overflow-x"><table>
           <thead><tr id="dashThead"></tr></thead>
@@ -275,9 +279,9 @@ tr.editing:hover td{background:var(--edit-bg)}
     <!-- Payments -->
     <div id="page-payments" class="page">
       <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap">
-          <h2 id="payments-card-title" style="font-size:15px;font-weight:500"></h2>
-          <div id="paymentsSearchWrap"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap">
+          <h2 id="payments-card-title" style="font-size:15px;font-weight:500;flex-shrink:0"></h2>
+          <div id="paymentsSearchWrap" style="flex:1;min-width:140px"></div>
         </div>
         <div id="payments-alert"></div>
         <div class="overflow-x"><table>
@@ -291,12 +295,12 @@ tr.editing:hover td{background:var(--edit-bg)}
     <!-- Nominees -->
     <div id="page-nominees" class="page">
       <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:.25rem;flex-wrap:wrap">
-          <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:.75rem;margin-bottom:.25rem;flex-wrap:wrap">
+          <div style="flex-shrink:0">
             <h2 style="font-size:15px;font-weight:600">Member Nominees</h2>
             <p style="font-size:12px;color:var(--text2);margin-top:3px">Emergency contacts — one nominee per member</p>
           </div>
-          <div id="nomineesSearchWrap"></div>
+          <div id="nomineesSearchWrap" style="flex:1;min-width:140px"></div>
         </div>
         <div id="nominees-alert"></div>
         <div class="overflow-x" style="margin-top:1rem"><table>
@@ -312,8 +316,8 @@ tr.editing:hover td{background:var(--edit-bg)}
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap">
           <h2 style="font-size:15px;font-weight:500">All members</h2>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <div id="memberSearchWrap"></div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;flex:1;min-width:140px;justify-content:flex-end">
+            <div id="memberSearchWrap" style="flex:1;min-width:120px"></div>
             <button class="btn btn-primary btn-sm" onclick="toggleAddForm()"><i class="ti ti-plus"></i> Add member</button>
           </div>
         </div>
@@ -626,10 +630,23 @@ function switchTab(tab,el){
 function renderPagination(page,total,setter){
   const pages=Math.ceil(total/PAGE_SIZE);
   if(pages<=1)return '';
+  // Smart page list: max 7 items with ellipsis
+  let nums;
+  if(pages<=7){
+    nums=Array.from({length:pages},(_,i)=>i);
+  } else if(page<4){
+    nums=[0,1,2,3,4,'…',pages-1];
+  } else if(page>=pages-4){
+    nums=[0,'…',pages-5,pages-4,pages-3,pages-2,pages-1];
+  } else {
+    nums=[0,'…',page-1,page,page+1,'…',pages-1];
+  }
   let h=`<div class="pagination">`;
   h+=`<button class="pg-btn" ${page===0?'disabled':''} onclick="${setter}(${page-1})"><i class="ti ti-chevron-left"></i></button>`;
-  for(let i=0;i<pages;i++)
-    h+=`<button class="pg-btn${i===page?' active':''}" onclick="${setter}(${i})">${i+1}</button>`;
+  nums.forEach(n=>{
+    if(n==='…') h+=`<span class="pg-ellipsis">…</span>`;
+    else h+=`<button class="pg-btn${n===page?' active':''}" onclick="${setter}(${n})">${n+1}</button>`;
+  });
   h+=`<button class="pg-btn" ${page===pages-1?'disabled':''} onclick="${setter}(${page+1})"><i class="ti ti-chevron-right"></i></button>`;
   h+=`</div>`;
   return h;
